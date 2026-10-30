@@ -143,16 +143,32 @@ section { margin-top: 52px; }
 .almanac .ph { display: none; }
 .retro { color: var(--gold); font-weight: 500; font-size: 15px; text-decoration: none; margin-left: 8px; cursor: help; }
 .legend { color: var(--faint); font-size: 16px; margin-top: 14px; text-align: center; }
-/* Phones: the same table as on a computer, every column. When it is wider than
-   the screen it scrolls sideways inside its frame, with the planet column held. */
+/* Phones: the same table, without "Time in Sign" (it is on the Planets page),
+   so it fits the screen: the degree under the sign, the Moon's hour under its date. */
 @media (max-width: 640px) {
-  .table-wrap { padding: 0; background: var(--bg); overscroll-behavior-x: contain; }
-  .almanac { font-size: 16px; }
-  .almanac th, .almanac td { padding: 9px 14px 9px 0; }
-  .almanac tr > :first-child { position: sticky; left: 0; z-index: 1; background: var(--bg); padding-left: 12px; }
-  .almanac tr > :last-child { padding-right: 14px; }
-  .almanac .deg { margin-left: 4px; font-size: 14px; }
-  .almanac .glyph { width: 1.35em; }
+  .table-wrap { padding: 0; }
+  .almanac { font-size: 15px; }
+  .almanac .c-stay { display: none; }
+  .almanac th, .almanac td { padding: 9px 8px 9px 0; }
+  .almanac tr > :first-child { padding-left: 12px; }
+  .almanac tr > :last-child { padding-right: 12px; }
+  .almanac .deg { display: block; margin: 0 0 0 1.35em; font-size: 13px; }
+  .almanac .tm { display: block; font-size: 13px; color: var(--muted); }
+  .almanac .cm { display: none; }
+  .almanac .glyph { width: 1.3em; }
+  .retro { margin-left: 4px; }
+}
+/* The smallest phones (iPhone SE): a little tighter, and no sign symbols */
+@media (max-width: 360px) {
+  body { padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
+  .almanac { font-size: 13.5px; }
+  .almanac td .glyph { display: none; }
+  .almanac .deg { margin-left: 0; font-size: 12px; }
+  .almanac .tm { font-size: 12px; }
+  .almanac th, .almanac td { padding-right: 5px; }
+  .almanac tr > :first-child { padding-left: 8px; }
+  .almanac tr > :last-child { padding-right: 8px; }
+  .retro { margin-left: 3px; }
 }
 /* The notes under the table, after a line with the Moon in the middle */
 .notes { display: grid; gap: 4px; margin-top: 30px; text-align: center; justify-items: center; }

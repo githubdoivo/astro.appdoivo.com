@@ -190,12 +190,14 @@
 
   // The landing table: one row per planet, like an almanac
   const when2 = (p, t) => (t == null ? "—" : p.body === "Moon" ? `${short(t)}, ${fmtTime(t)}` : shortOrYear(t));
+  // The same, as table HTML: the Moon's hour in its own span, so phones can put it on a second line
+  const whenCell = (p, t) => (t != null && p.body === "Moon" ? `${esc(short(t))}<span class="tm"><span class="cm">, </span>${esc(fmtTime(t))}</span>` : esc(when2(p, t)));
   function skyTable(sky) {
     return sky.planets.map((p) => `<tr${p.retro ? ' class="is-retro"' : ""}>
       <th scope="row"><span class="nw"><span class="glyph">${g(GLYPH[p.body])}</span>${esc(w.bodies[p.body])}${p.retro ? `<abbr class="retro" title="${esc(w.retro)}">${w.retroShort}</abbr>` : ""}</span></th>
       <td><span class="nw"><span class="glyph">${g(SIGN[p.sign])}</span>${esc(w.signs[p.sign])}</span> <span class="deg">${deg(p.deg)}</span></td>
-      <td class="num c-since">${esc(when2(p, p.since))}</td>
-      <td class="num c-until">${esc(when2(p, p.until))}<small class="ph">${esc(w.since)} ${esc(when2(p, p.since))}</small></td>
+      <td class="num c-since">${whenCell(p, p.since)}</td>
+      <td class="num c-until">${whenCell(p, p.until)}<small class="ph">${esc(w.since)} ${esc(when2(p, p.since))}</small></td>
       <td class="num c-stay">${esc(span(p.since, p.until))}</td></tr>`).join("");
   }
   function eventText(e) {
