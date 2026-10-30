@@ -132,7 +132,7 @@ section { margin-top: 52px; }
 
 /* The almanac: the landing page's table, in a fine gold frame */
 .table-wrap { overflow-x: auto; border: 1px solid var(--edge); border-radius: 14px; background: var(--card); padding: 6px 22px; }
-.almanac { width: 100%; border-collapse: collapse; font-size: 18px; }
+.almanac { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 18px; }
 .almanac th, .almanac td { text-align: left; padding: 10px 16px 10px 0; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: baseline; }
 .almanac tbody tr:last-child > * { border-bottom: 0; }
 .almanac thead th { font-weight: 500; color: var(--fg); padding-block: 12px; border-bottom-color: var(--edge); }
