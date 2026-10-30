@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=EB+Garamond:wght@400;500&family=Noto+Sans+Symbols:wght@300;400&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/astro.css?v=21">
+<link rel="stylesheet" href="/astro.css?v=22">
 </head>
 <body data-page="sky">
 <header class="top" id="top"></header>
@@ -33,9 +33,9 @@
     <h1 data-w="skyTitle"></h1>
     <div class="moment" id="moment"></div>
   </section>
-  <div class="table-wrap">
+  <div class="table-wrap" tabindex="0" role="region" aria-labelledby="sky-caption">
     <table class="almanac">
-      <caption class="sr" data-w="planets"></caption>
+      <caption class="sr" id="sky-caption" data-w="planets"></caption>
       <thead><tr><th scope="col" data-w="planet"></th><th scope="col" data-w="sign"></th><th scope="col" class="c-since" data-w="since"></th><th scope="col" class="c-until" data-w="untilCol"></th><th scope="col" class="c-stay" data-w="stay"></th></tr></thead>
       <tbody id="sky-rows"></tbody>
     </table>
@@ -45,8 +45,8 @@
 </main>
 <footer class="foot" id="foot"></footer>
 <script src="/vendor/astronomy.min.js?v=2.1.19"></script>
-<script src="/sky.js?v=21"></script>
-<script src="/words.js?v=21"></script>
-<script src="/app.js?v=21"></script>
+<script src="/sky.js?v=22"></script>
+<script src="/words.js?v=22"></script>
+<script src="/app.js?v=22"></script>
 </body>
 </html>
