@@ -142,6 +142,18 @@
     return { body, now: speed(body, date) < 0, start, end, from: signOf(lon(body, at(start))), to: signOf(lon(body, at(end))) };
   }
 
+  // Everything that happens from date for `days`: sign changes, stations, Moon phases
+  function calendar(date, days = 90) {
+    const out = upcoming(date, days), end = date.getTime() + days * DAY;
+    let q = A.SearchMoonQuarter(date);
+    while (q.time.date.getTime() <= end) {
+      const t = q.time.date.getTime();
+      out.push({ type: "phase", body: "Moon", quarter: q.quarter, time: t, sign: signOf(lon("Moon", at(t))) });
+      q = A.NextMoonQuarter(q);
+    }
+    return out.sort((x, y) => x.time - y.time);
+  }
+
   function sky(date) {
     const ps = BODIES.map((b) => planet(b, date));
     const count = (k, keys) => Object.fromEntries(keys.map((x) => [x, ps.filter((p) => p[k] === x).map((p) => p.body)]));
@@ -152,5 +164,5 @@
     };
   }
 
-  root.Sky = { BODIES, ELEMENT, MODALITY, ASPECTS, sky, upcoming, retrograde, lon, speed };
+  root.Sky = { BODIES, ELEMENT, MODALITY, ASPECTS, sky, upcoming, calendar, retrograde, lon, speed };
 })(typeof window !== "undefined" ? window : globalThis);

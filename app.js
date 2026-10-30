@@ -108,16 +108,6 @@
       <h3>${esc(w.nextPhases)}</h3><ul class="phases">${next}</ul>`;
   }
 
-  function planetRows(sky) {
-    return sky.planets.map((p) => `<tr>
-      <th scope="row"><span class="glyph">${g(GLYPH[p.body])}</span>${esc(w.bodies[p.body])}</th>
-      <td><span class="glyph">${g(SIGN[p.sign])}</span>${esc(w.signs[p.sign])}</td>
-      <td class="num">${deg(p.deg)}${p.retro ? ` <abbr class="retro" title="${esc(w.retro)}">${w.retroShort}</abbr>` : ""}</td>
-      <td class="num"><span class="cap">${esc(w.entered)}</span>${p.since ? esc(p.body === "Moon" ? fmtWhen(p.since) : fmtDay(p.since)) : "—"}</td>
-      <td class="num"><span class="cap">${esc(w.leaves)}</span>${p.until ? esc(p.body === "Moon" ? fmtWhen(p.until) : fmtDay(p.until)) : "—"}</td>
-      <td class="num"><span class="cap">${esc(w.stay)}</span>${esc(span(p.since, p.until))}</td></tr>`).join("");
-  }
-
   const short = (t) => new Date(t).toLocaleDateString(loc(), { timeZone: zone, day: "numeric", month: "short" });
   const shortOrYear = (t) => (Math.abs(t - when.getTime()) > 300 * 86400000 ? fmtDay(t) : short(t));
   function planetCards(sky) {
@@ -133,18 +123,6 @@
         ${rp[p.body] ? `<p class="pc-retro">${esc(w.retroUntil.replace("{d}", short(rp[p.body].end)))}</p>` : ""}</li>`;
     }).join("");
   }
-  function summary(sky) {
-    const by = Object.fromEntries(sky.planets.map((p) => [p.body, p]));
-    const n = sky.planets.filter((p) => p.retro).length;
-    const lead = live ? w.sumNow : w.sumOn.replace("{d}", fmtWhen(when));
-    const bits = [
-      `<span class="nw">${g(GLYPH.Sun)} ${esc(w.bodies.Sun)}</span> ${esc(w.inSign)} ${esc(w.signs[by.Sun.sign])}`,
-      `<span class="nw">${g(GLYPH.Moon)} ${esc(w.bodies.Moon)}</span> ${esc(w.inSign)} ${esc(w.signs[by.Moon.sign])}`,
-      esc(n === 0 ? w.retroNone : n === 1 ? w.retroOne : w.retroMany.replace("{n}", n)),
-    ].filter(Boolean);
-    return `<span class="lead">${esc(lead)}:</span> ${bits.join(" · ")}`;
-  }
-
   function bars(groups, names) {
     const total = Object.values(groups).reduce((n, list) => n + list.length, 0);
     return Object.entries(groups).map(([k, list]) => `<li class="bar el-${k}">
@@ -198,31 +176,115 @@
     }).join("")}</ol>`;
   }
 
-  function draw() {
+
+  // The landing table: one row per planet, like an almanac
+  const when2 = (p, t) => (t == null ? "—" : p.body === "Moon" ? `${short(t)}, ${fmtTime(t)}` : shortOrYear(t));
+  function skyTable(sky) {
+    return sky.planets.map((p) => `<tr${p.retro ? ' class="is-retro"' : ""}>
+      <th scope="row"><span class="glyph">${g(GLYPH[p.body])}</span>${esc(w.bodies[p.body])}${p.retro ? ` <abbr class="retro" title="${esc(w.retro)}">${w.retroShort}</abbr>` : ""}</th>
+      <td><span class="glyph">${g(SIGN[p.sign])}</span>${esc(w.signs[p.sign])} <span class="deg">${deg(p.deg)}</span></td>
+      <td class="num c-since">${esc(when2(p, p.since))}</td>
+      <td class="num c-until">${esc(when2(p, p.until))}<small class="ph">${esc(w.since)} ${esc(when2(p, p.since))}</small></td>
+      <td class="num c-stay">${esc(span(p.since, p.until))}</td></tr>`).join("");
+  }
+  function eventText(e) {
+    const who = `<span class="nw"><span class="glyph">${g(GLYPH[e.body])}</span>${esc(w.bodies[e.body])}</span>`;
+    const sign = `<span class="nw"><span class="glyph">${g(SIGN[e.sign])}</span>${esc(w.signs[e.sign])}</span>`;
+    if (e.type === "phase") return `<span class="nw"><span class="glyph">${g(GLYPH.Moon)}</span>${esc(w.quarters[e.quarter])}</span> ${esc(w.phaseOn)} ${sign}`;
+    if (e.type === "ingress") return `${who} ${esc(w.enters)} ${sign}${e.retro ? ` <span class="muted">(${esc(w.whileRetro)})</span>` : ""}`;
+    return `${who} ${esc(e.type === "retro" ? w.turnsRetro : w.turnsDirect)} ${sign}`;
+  }
+  function skyNotes(sky) {
+    const out = [];
+    const merc = sky.retrogrades.find((r) => r.body === "Mercury");
+    if (merc && merc.now) out.push(`<p class="note is-merc"><span class="glyph">${g(GLYPH.Mercury)}</span>${esc(w.mercLine.replace("{d}", fmtDay(merc.end)))} <a href="${link("retrogrades")}">${esc(w.aboutRetro)}</a></p>`);
+    else if (merc && merc.start - when.getTime() < 21 * 86400000) out.push(`<p class="note"><span class="glyph">${g(GLYPH.Mercury)}</span>${esc(w.mercSoon.replace("{d}", fmtDay(merc.start)))} <a href="${link("retrogrades")}">${esc(w.aboutRetro)}</a></p>`);
+    const next = Sky.upcoming(when, 45)[0];
+    if (next) out.push(`<p class="note"><span class="lead">${esc(w.nextIs)}</span> <time class="nw">${esc(fmtDay(next.time))}</time> · ${eventText(next)} <a href="${link("calendar")}">${esc(w.nav.calendar)}</a></p>`);
+    return out.join("");
+  }
+  function calendarList(events) {
+    if (!events.length) return `<p class="muted">${esc(w.nothing)}</p>`;
+    let html = "", month = "";
+    for (const e of events) {
+      const m = new Date(e.time).toLocaleDateString(loc(), { timeZone: zone, month: "long", year: "numeric" });
+      if (m !== month) { html += `${month ? "</ol>" : ""}<h2 class="month">${esc(m)}</h2><ol class="coming">`; month = m; }
+      const day = new Date(e.time).toLocaleDateString(loc(), { timeZone: zone, weekday: "short", day: "numeric" });
+      html += `<li class="ev-${e.type}"><time>${esc(day)}, ${esc(fmtTime(e.time))}</time><span>${eventText(e)}</span></li>`;
+    }
+    return html + "</ol>";
+  }
+  function moonSign(sky) {
+    const m = sky.planets.find((p) => p.body === "Moon");
+    const nextSign = (m.sign + 1) % 12;
+    return `<p class="moon-sign"><span class="glyph">${g(SIGN[m.sign])}</span>${esc(w.moonIn.replace("{s}", w.signs[m.sign]))}</p>
+      <p class="muted">${esc(w.moonUntil.replace("{d}", `${short(m.until)}, ${fmtTime(m.until)}`).replace("{s}", w.signs[nextSign]))}</p>`;
+  }
+
+  // ---- the shell: header, menu, the moment, footer (the same on every page) ----
+  const PAGES = [["sky", "/"], ["planets", "/planets/"], ["retrogrades", "/retrogrades/"], ["moon", "/moon/"], ["chart", "/chart/"], ["calendar", "/calendar/"]];
+  const page = document.body.dataset.page || "sky";
+  const state = () => { const q = new URLSearchParams(); if (!live) q.set("d", localInput(when)); if (zone !== home) q.set("tz", zone); return q.toString(); };
+  const link = (key) => { const q = state(); return PAGES.find((p) => p[0] === key)[1] + (q ? "?" + q : ""); };
+
+  function shell() {
+    $("top").innerHTML = `<div class="topbar">
+        <a class="brand" href="/">Astro</a>
+        <button class="lang" id="lang" type="button"></button>
+      </div>
+      <nav class="nav" id="nav"><ul>${PAGES.map(([k]) => `<li><a data-page="${k}"${k === page ? ' aria-current="page"' : ""}></a></li>`).join("")}</ul></nav>`;
+    $("moment").innerHTML = `<p class="moment-line"><span id="moment-text"></span><button type="button" class="change" id="change" aria-expanded="false" aria-controls="controls"></button></p>
+      <form class="controls" id="controls" hidden>
+        <label class="field"><span data-w="skyOn"></span><input type="datetime-local" id="when" step="60" required></label>
+        <label class="field"><span><span data-w="zone"></span> · <span id="tz-offset"></span></span><select id="tz"></select></label>
+        <div class="steps">
+          <button type="button" id="prev">←</button>
+          <button type="button" id="now" data-w="now"></button>
+          <button type="button" id="next">→</button>
+        </div>
+      </form>`;
+    $("foot").innerHTML = `<p data-w="about"></p>`;
+  }
+
+  function renderPage() {
     const sky = Sky.sky(when);
+    const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+    set("sky-rows", skyTable(sky));
+    set("sky-notes", skyNotes(sky));
+    set("planet-cards", planetCards(sky));
+    if ($("mercury")) { set("mercury", mercury(sky)); $("mercury").classList.toggle("is-now", sky.retrogrades.some((r) => r.body === "Mercury" && r.now)); }
+    set("retro-list", retroList(sky));
+    set("moon-card", moonCard(sky.moon));
+    set("moon-sign", moonSign(sky));
+    set("wheel", wheel(sky));
+    set("elements", bars(sky.elements, w.element));
+    set("modalities", bars(sky.modalities, w.modality));
+    set("aspect-list", aspectList(sky));
+    set("calendar-list", calendarList(Sky.calendar(when, 90)));
+  }
+
+  function draw() {
+    const full = new Date(when).toLocaleDateString(loc(), { timeZone: zone, weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    $("moment-text").innerHTML = `${live ? `<b>${esc(w.now)}</b> · ` : ""}<time>${esc(full)}, ${esc(fmtTime(when))}</time> · ${esc(zoneName(zone).replace(/ \(.*\)$/, ""))}`;
     $("when").value = localInput(when);
     $("now").setAttribute("aria-pressed", String(live));
-    $("wheel").innerHTML = wheel(sky);
-    $("moon-card").innerHTML = moonCard(sky.moon);
-    $("planet-rows").innerHTML = planetRows(sky);
-    $("planet-cards").innerHTML = planetCards(sky);
-    $("summary").innerHTML = summary(sky);
-    $("elements").innerHTML = bars(sky.elements, w.element);
-    $("modalities").innerHTML = bars(sky.modalities, w.modality);
-    $("aspect-list").innerHTML = aspectList(sky);
-    $("mercury").innerHTML = mercury(sky);
-    $("mercury").classList.toggle("is-now", sky.retrogrades.some((r) => r.body === "Mercury" && r.now));
-    $("retro-list").innerHTML = retroList(sky);
-    $("coming-list").innerHTML = comingList(Sky.upcoming(when, 45));
+    document.querySelectorAll("#nav a").forEach((a) => (a.href = link(a.dataset.page)));
+    $("brand-link") && ($("brand-link").href = link("sky"));
+    renderPage();
   }
 
   function fill() {
     w = WORDS[lang];
     document.documentElement.lang = w.lang;
-    document.title = w.title;
+    document.title = w.pageTitle[page];
     document.querySelectorAll("[data-w]").forEach((el) => (el.textContent = w[el.dataset.w]));
-    document.querySelectorAll("[data-wl]").forEach((el) => el.setAttribute("aria-label", w[el.dataset.wl]));
+    document.querySelectorAll("#nav a").forEach((a) => (a.textContent = w.nav[a.dataset.page]));
+    document.querySelectorAll("[data-wn]").forEach((el) => (el.textContent = w.nav[el.dataset.wn]));
+    $("nav").setAttribute("aria-label", w.navLabel);
     const b = $("lang"); b.textContent = w.other; b.setAttribute("aria-label", `${w.other}: ${w.otherLabel}`);
+    $("prev").setAttribute("aria-label", w.prevDay); $("next").setAttribute("aria-label", w.nextDay);
+    $("change").textContent = $("controls").hidden ? w.change : w.close;
+    $("change").setAttribute("aria-label", $("controls").hidden ? w.changeLabel : w.close);
     const sel = $("tz");
     if (!sel.options.length) sel.innerHTML = zones.map((z) => `<option value="${esc(z)}">${esc(zoneName(z))}</option>`).join("");
     sel.value = zone;
@@ -236,35 +298,33 @@
     const q = new URLSearchParams(location.search);
     if (live) q.delete("d"); else q.set("d", localInput(d));
     if (zone === home) q.delete("tz"); else q.set("tz", zone);
+    q.delete("lang");
     history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
     draw();
   }
 
+  shell();
+  // On phones the menu scrolls sideways: bring the current page into view
+  const here = document.querySelector("#nav a[aria-current=page]");
+  if (here) $("nav").scrollLeft = Math.max(0, here.offsetLeft - 20);
+  $("change").addEventListener("click", () => {
+    const c = $("controls"); c.hidden = !c.hidden;
+    $("change").setAttribute("aria-expanded", String(!c.hidden));
+    $("change").textContent = c.hidden ? w.change : w.close;
+    $("change").setAttribute("aria-label", c.hidden ? w.changeLabel : w.close);
+    if (!c.hidden) $("when").focus();
+  });
   $("when").addEventListener("change", (e) => { if (e.target.value) setWhen(fromWall(e.target.value)); });
-  // Changing the zone keeps the same instant; the clock on screen moves to the new place
   $("tz").addEventListener("change", (e) => { zone = e.target.value; $("tz-offset").textContent = gmt(zone); setWhen(when, live); });
   $("now").addEventListener("click", () => setWhen(new Date(), true));
   $("prev").addEventListener("click", () => setWhen(new Date(when.getTime() - 86400000)));
   $("next").addEventListener("click", () => setWhen(new Date(when.getTime() + 86400000)));
-  // Cards or table: remembered on this device
-  let view = "cards"; try { view = localStorage.getItem("view") === "table" ? "table" : "cards"; } catch (_) {}
-  function setView(v) {
-    view = v;
-    $("planet-cards").hidden = v !== "cards"; $("planet-table").hidden = v !== "table";
-    $("view-cards").setAttribute("aria-pressed", String(v === "cards")); $("view-table").setAttribute("aria-pressed", String(v === "table"));
-    try { localStorage.setItem("view", v); } catch (_) {}
-  }
-  $("view-cards").addEventListener("click", () => setView("cards"));
-  $("view-table").addEventListener("click", () => setView("table"));
-  setView(view);
-
   $("lang").addEventListener("click", () => {
     lang = lang === "pt" ? "en" : "pt";
     try { localStorage.setItem("lang", lang); } catch (_) {}
     fill();
   });
-  // "Now" stays now: redraw every minute while the page is showing the present
+  // "Now" stays now: redraw every minute while the page shows the present
   setInterval(() => { if (live && !document.hidden) { when = new Date(); draw(); } }, 60000);
-
   fill();
 })();

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Astro · Not Found</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/astro.css?v=14">
+</head>
+<body>
+<main class="lost">
+  <p class="brand">Astro</p>
+  <h1 id="t">Lost in Space</h1>
+  <p class="intro" id="p">This page is not in the sky.</p>
+  <p><a id="a" href="/">Back to the Sky</a></p>
+</main>
+<script>
+  // Portuguese when the visitor chose it before, or the browser speaks it
+  let l = null; try { l = localStorage.getItem("lang"); } catch (_) {}
+  if ((l || navigator.language || "").toLowerCase().startsWith("pt")) {
+    document.documentElement.lang = "pt";
+    document.getElementById("t").textContent = "Perdido no espaço";
+    document.getElementById("p").textContent = "Esta página não está no céu.";
+    document.getElementById("a").textContent = "Voltar ao céu";
+  }
+</script>
+</body>
+</html>

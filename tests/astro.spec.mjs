@@ -2,31 +2,31 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 // A fixed moment, so the checks below do not drift: 29 Oct 2026, 12:00 in Lisbon
-const AT = "/?lang=en&d=2026-10-29T12:00&tz=Europe/Lisbon";
+const Q = "?lang=en&d=2026-10-29T12:00&tz=Europe/Lisbon";
+const PAGES = ["/", "/planets/", "/retrogrades/", "/moon/", "/chart/", "/calendar/"];
 
 test.beforeEach(async ({ page }) => {
-  // Start each test with nothing saved, but keep what the test itself saves across reloads
+  // Start each test with nothing saved, but keep what the test itself saves across pages
   await page.addInitScript(() => { try { if (!sessionStorage.getItem("fresh")) { localStorage.clear(); sessionStorage.setItem("fresh", "1"); } } catch (_) {} });
 });
 
-test("the page renders with no errors and every section filled", async ({ page }) => {
+test("every page renders with no errors or missing files", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("response", (r) => { if (r.status() >= 400 && r.url().startsWith("http://localhost")) errors.push(`${r.status()}: ${r.url()}`); });
-  await page.goto(AT);
-  await expect(page.locator("#planet-cards .pcard")).toHaveCount(10);
-  await expect(page.locator("#planet-rows tr")).toHaveCount(10);
-  await expect(page.locator("#retro-list li")).toHaveCount(8);           // every planet but the Sun and Moon
-  await expect(page.locator("#coming-list li").first()).toBeVisible();
-  await expect(page.locator("#moon-card")).toContainText("Waning Gibbous");
-  for (const f of ["favicon.svg", "favicon.ico", "apple-touch-icon.png"]) expect((await page.request.get(`/${f}`)).status(), f).toBe(200);
+  for (const p of PAGES) {
+    await page.goto(p + Q);
+    await expect(page.locator("h1"), p).not.toBeEmpty();
+    await expect(page.locator("#nav a[aria-current=page]"), p).toHaveCount(1);
+  }
+  for (const f of ["favicon.svg", "favicon.ico", "apple-touch-icon.png", "og-image.png"]) expect((await page.request.get(`/${f}`)).status(), f).toBe(200);
   expect(errors).toEqual([]);
 });
 
 // Checked against published ephemerides and ponteiro.com.br for the same dates
 test("the sums match known dates", async ({ page }) => {
-  await page.goto(AT);
+  await page.goto("/" + Q);
   const r = await page.evaluate(() => {
     const s = Sky.sky(new Date("2026-10-29T12:00:00Z"));
     const day = (t) => new Date(t).toISOString().slice(0, 10);
@@ -34,7 +34,6 @@ test("the sums match known dates", async ({ page }) => {
     const merc = s.retrogrades.find((x) => x.body === "Mercury");
     return { p, merc: { now: merc.now, start: day(merc.start), end: day(merc.end) } };
   });
-  // Signs: 0 Aries … 7 Scorpio … 10 Aquarius
   expect(r.p.Sun).toEqual({ sign: 7, retro: false, since: "2026-10-23", until: "2026-11-22" });
   expect(r.p.Mars).toMatchObject({ sign: 4, since: "2026-09-28", until: "2026-11-25" });
   expect(r.p.Jupiter).toMatchObject({ sign: 4, since: "2026-06-30" });
@@ -44,121 +43,157 @@ test("the sums match known dates", async ({ page }) => {
   expect(r.merc).toEqual({ now: true, start: "2026-10-24", end: "2026-11-13" });
 });
 
-test("Mercury retrograde is called out at the top, with its period and days left", async ({ page }) => {
-  await page.goto(AT);
+test("the landing page is the table: ten planets, their sign, since, until, retrograde marks", async ({ page, isMobile }) => {
+  await page.goto("/" + Q);
+  await expect(page.locator("h1")).toHaveText("The Sky");
+  const rows = page.locator("#sky-rows tr");
+  await expect(rows).toHaveCount(10);
+  await expect(rows.nth(0)).toContainText("Sun");
+  await expect(rows.nth(0)).toContainText("Scorpio");
+  await expect(rows.nth(0)).toContainText("22 Nov");
+  await expect(page.locator("#sky-rows abbr.retro")).toHaveCount(5);           // Mercury, Venus, Saturn, Uranus, Neptune
+  await expect(page.locator(".legend")).toContainText("R: retrograde");
+  await expect(page.locator("#sky-notes")).toContainText("Mercury is retrograde until 13 Nov 2026");
+  // Nothing else competes with the table: no cards, wheel or open controls
+  await expect(page.locator(".pcard, .wheel")).toHaveCount(0);
+  await expect(page.locator("#controls")).toBeHidden();
+  if (!isMobile) await expect(page.locator("thead .c-since")).toBeVisible();
+});
+
+test("the date and place sit in one line; Change opens the controls", async ({ page }) => {
+  await page.goto("/" + Q);
+  await expect(page.locator("#moment-text")).toContainText("Thursday, 29 October 2026, 12:00");
+  await expect(page.locator("#moment-text")).toContainText("Lisbon");
+  await expect(page.locator("#controls")).toBeHidden();
+  await page.locator("#change").click();
+  await expect(page.locator("#controls")).toBeVisible();
+  await expect(page.locator("#change")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#when")).toBeFocused();
+  await page.locator("#next").click();
+  await expect(page.locator("#when")).toHaveValue("2026-10-30T12:00");
+  expect(page.url()).toContain("d=2026-10-30T12%3A00");
+  await page.locator("#now").click();
+  await expect(page.locator("#now")).toHaveAttribute("aria-pressed", "true");
+  expect(page.url()).not.toContain("d=");
+  await expect(page.locator("#moment-text")).toContainText("Now");
+});
+
+test("the menu keeps the chosen moment from page to page", async ({ page }) => {
+  await page.goto("/?lang=en&d=2026-10-29T12:00&tz=America/New_York");
+  await page.locator("#nav a[data-page=retrogrades]").click();
+  await expect(page).toHaveURL(/\/retrogrades\/\?d=2026-10-29T12%3A00&tz=America%2FNew_York/);
+  await expect(page.locator("h1")).toHaveText("Retrogrades");
+  await expect(page.locator("#moment-text")).toContainText("29 October 2026, 12:00");
+  await expect(page.locator("#moment-text")).toContainText("New York");
+  await page.locator("#nav a[data-page=sky]").click();
+  await expect(page.locator("#sky-rows tr")).toHaveCount(10);
+});
+
+test("Retrogrades: Mercury first, with its period and days left; the next one after it ends", async ({ page }) => {
+  await page.goto("/retrogrades/" + Q);
   const m = page.locator("#mercury");
   await expect(m).toHaveClass(/is-now/);
-  await expect(m).toContainText("Mercury is retrograde");
   await expect(m).toContainText("24 Oct 2026 – 13 Nov 2026");
   await expect(m).toContainText("16 days left");
-  // After it ends, the banner shows the next one instead
-  await page.goto("/?lang=en&d=2026-11-20T12:00&tz=Europe/Lisbon");
+  await expect(page.locator("#retro-list li")).toHaveCount(8);
+  await page.goto("/retrogrades/?lang=en&d=2026-11-20T12:00&tz=Europe/Lisbon");
   await expect(m).not.toHaveClass(/is-now/);
   await expect(m).toContainText("Next Mercury retrograde");
 });
 
-test("cards first, a table on request, and the choice is remembered", async ({ page }) => {
-  await page.goto(AT);
-  await expect(page.locator("#planet-cards")).toBeVisible();
-  await expect(page.locator("#planet-table")).toBeHidden();
-  const merc = page.locator(".pcard", { hasText: "Mercury" });
-  await expect(merc).toContainText("Scorpio");
-  await expect(merc).toContainText("Thinking, talking");
-  await expect(merc).toContainText("Retrograde until 13 Nov");
-  await page.locator("#view-table").click();
-  await expect(page.locator("#planet-table")).toBeVisible();
-  await expect(page.locator("#view-table")).toHaveAttribute("aria-pressed", "true");
-  await page.reload();
-  await expect(page.locator("#planet-table")).toBeVisible();
-});
-
-test("the wheel, balance and aspects stay folded until asked for", async ({ page }) => {
-  await page.goto(AT);
-  await expect(page.locator("#wheel svg")).toBeHidden();
-  await page.locator("#more summary").click();
-  await expect(page.locator("#wheel svg")).toBeVisible();
+test("Planets, Moon, Chart and Calendar each show their part", async ({ page }) => {
+  await page.goto("/planets/" + Q);
+  await expect(page.locator(".pcard")).toHaveCount(10);
+  await expect(page.locator(".pcard", { hasText: "Mercury" })).toContainText("Retrograde until 13 Nov");
+  await page.goto("/moon/" + Q);
+  await expect(page.locator("#moon-card")).toContainText("Waning Gibbous");
+  await expect(page.locator("#moon-sign")).toContainText("Moon in Gemini");
+  await page.goto("/chart/" + Q);
   await expect(page.locator("#wheel .planet")).toHaveCount(10);
   await expect(page.locator("#elements .bar")).toHaveCount(4);
   await expect(page.locator("#aspect-list li").first()).toBeVisible();
-});
-
-test("the arrows move a day, Now goes back to the present, and the link keeps the moment", async ({ page }) => {
-  await page.goto(AT);
-  await page.locator("#next").click();
-  await expect(page.locator("#when")).toHaveValue("2026-10-30T12:00");
-  expect(page.url()).toContain("d=2026-10-30T12%3A00");
-  await page.locator("#prev").click();
-  await page.locator("#prev").click();
-  await expect(page.locator("#when")).toHaveValue("2026-10-28T12:00");
-  await page.locator("#now").click();
-  await expect(page.locator("#now")).toHaveAttribute("aria-pressed", "true");
-  expect(page.url()).not.toContain("d=");
+  await page.goto("/calendar/" + Q);
+  await expect(page.locator("#calendar-list .month")).toHaveCount(3);
+  await expect(page.locator("#calendar-list")).toContainText("Mercury turns direct in");
+  await expect(page.locator("#calendar-list")).toContainText("Full Moon in");
 });
 
 test("changing the time zone keeps the instant and moves the clock", async ({ page }) => {
-  await page.goto(AT);
+  await page.goto("/" + Q);
+  await page.locator("#change").click();
   await page.locator("#tz").selectOption("America/Sao_Paulo");
   await expect(page.locator("#when")).toHaveValue("2026-10-29T09:00");
   await expect(page.locator("#tz-offset")).toHaveText(/GMT−03:00/);
-  // The Sun's sign change is now shown in Brazilian time
-  await page.locator("#view-table").click();
-  await expect(page.locator("#planet-rows tr").first()).toContainText("23 Oct 2026");
+  await expect(page.locator("#moment-text")).toContainText("Sao Paulo");
 });
 
-test("Portuguese: from the browser, European Portuguese names, and remembered", async ({ browser }) => {
+test("Portuguese: from the browser, European Portuguese names, remembered across pages", async ({ browser }) => {
   const ctx = await browser.newContext({ locale: "pt-PT", timezoneId: "Europe/Lisbon" });
   const page = await ctx.newPage();
   await page.goto("/?d=2026-10-29T12:00");
   await expect(page.locator("html")).toHaveAttribute("lang", "pt");
-  await expect(page.locator("#mercury")).toContainText("Mercúrio está retrógrado");
-  await expect(page.locator(".pcard", { hasText: "Vénus" })).toContainText("Balança");
-  await expect(page.locator(".pcard", { hasText: "Saturno" })).toContainText("Carneiro");
+  await expect(page.locator("h1")).toHaveText("O céu");
+  await expect(page.locator("#sky-rows")).toContainText("Balança");
+  await expect(page.locator("#sky-rows")).toContainText("Carneiro");
+  await expect(page.locator("#sky-notes")).toContainText("Mercúrio está retrógrado");
   await page.locator("#lang").click();
-  await expect(page.locator("#view-cards")).toHaveText("Cards");
-  await page.reload();
-  await expect(page.locator("#lang")).toHaveText("PT");
+  await expect(page.locator("h1")).toHaveText("The Sky");
+  await page.locator("#nav a[data-page=moon]").click();
+  await expect(page.locator("h1")).toHaveText("Moon");
   await ctx.close();
 });
 
-test("English labels use Title Case", async ({ page }) => {
-  await page.goto(AT);
+test("English labels use Title Case, and both languages have the same words", async ({ page }) => {
+  await page.goto("/" + Q);
   const e = await page.evaluate(() => WORDS.en);
   const small = new Set(["a", "an", "and", "the", "of", "in", "on", "at", "to", "for", "by"]);
-  for (const label of [e.tagline, e.skyOn, e.now, e.prevDay, e.nextDay, e.zone, e.wheel, e.planets, e.planet, e.sign, e.position, e.entered, e.leaves, e.stay, e.retro, e.balance, e.elements, e.modalities, e.aspects, e.moon, e.nextPhases, e.coming, e.soonTitle, e.retros, e.retroNow, e.retroNext, e.cards, e.table, e.more]) {
-    label.split(/\s+/).forEach((w, i) => { if (i === 0 || !small.has(w.toLowerCase())) expect(w[0], `"${label}"`).toBe(w[0].toUpperCase()); });
-  }
-  // Both languages have the same keys
+  const labels = [e.skyTitle, e.now, e.prevDay, e.nextDay, e.zone, e.skyOn, e.change, e.close, e.planet, e.sign, e.since, e.untilCol, e.stay,
+    e.wheel, e.balance, e.elements, e.modalities, e.aspects, e.nextPhases, e.retroNow, e.retroNext, e.aboutRetro, ...Object.values(e.nav)];
+  for (const label of labels) label.split(/\s+/).forEach((w, i) => { if (i === 0 || !small.has(w.toLowerCase())) expect(w[0], `"${label}"`).toBe(w[0].toUpperCase()); });
   const pt = await page.evaluate(() => WORDS.pt);
   expect(Object.keys(pt).sort()).toEqual(Object.keys(e).sort());
+  expect(Object.keys(pt.nav).sort()).toEqual(Object.keys(e.nav).sort());
 });
 
-test("no sideways scroll, at any width, light or dark", async ({ browser }) => {
+test("no sideways scroll on any page, at any width, light or dark", async ({ browser }) => {
+  test.setTimeout(180000);
   for (const scheme of ["light", "dark"]) for (const width of [340, 390, 768, 1280, 1920]) {
     const ctx = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: scheme });
     const page = await ctx.newPage();
-    await page.goto(AT);
-    await page.locator("#more summary").click();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `${width} ${scheme}`).toBeLessThanOrEqual(0);
+    for (const p of PAGES) {
+      await page.goto(p + Q);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `${p} ${width} ${scheme}`).toBeLessThanOrEqual(0);
+    }
     await ctx.close();
   }
 });
 
 test("touch targets are at least 44px", async ({ page }) => {
-  await page.goto(AT);
-  for (const sel of ["#lang", "#prev", "#now", "#next", "#when", "#tz", "#view-cards", "#view-table", "#more summary", "footer a"]) {
+  await page.goto("/" + Q);
+  await page.locator("#change").click();
+  for (const sel of ["#lang", ".brand", "#change", "#when", "#tz", "#prev", "#now", "#next", "#nav a >> nth=0"]) {
     const b = await page.locator(sel).boundingBox();
     expect(b.height, sel).toBeGreaterThanOrEqual(44);
+    expect(b.width, sel).toBeGreaterThanOrEqual(24);
   }
 });
 
-test("no serious accessibility problems, folded and open, light and dark", async ({ browser }) => {
+test("no serious accessibility problems on any page, light and dark", async ({ browser }) => {
+  test.setTimeout(120000);
   for (const scheme of ["light", "dark"]) {
     const ctx = await browser.newContext({ colorScheme: scheme });
     const page = await ctx.newPage();
-    await page.goto(AT);
-    await page.locator("#more summary").click();
-    const r = await new AxeBuilder({ page }).analyze();
-    expect(r.violations.filter((v) => ["serious", "critical"].includes(v.impact)).map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(", ")}`), scheme).toEqual([]);
+    for (const p of PAGES) {
+      await page.goto(p + Q);
+      const r = await new AxeBuilder({ page }).analyze();
+      expect(r.violations.filter((v) => ["serious", "critical"].includes(v.impact)).map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(", ")}`), `${p} ${scheme}`).toEqual([]);
+    }
     await ctx.close();
   }
+});
+
+test("a lost link shows a calm 404 with a way back", async ({ page }) => {
+  await page.goto("/404.html");
+  await expect(page.locator("h1")).toHaveText("Lost in Space");
+  await expect(page.locator("a[href='/']")).toBeVisible();
 });

@@ -4,12 +4,13 @@ Written down 2026-10-30 from Ivo's ideas. Version 1 (now) is only the sky; every
 below is intention, not built yet.
 
 ## Now (v1): the sky at any moment
-- Planet signs, degrees, retrograde markers; when each entered and leaves its sign.
-- Retrograde periods (now and next), with Mercury retrograde called out at the top.
-- Zodiac wheel with aspects, element and modality balance, aspect list, Moon phase,
-  what changes in the next 45 days.
+- A calm landing page that is almost only the table (sign, since, until, R), so
+  nobody is overwhelmed; the rest on quiet pages: Planets (plain words),
+  Retrogrades (Mercury first), Moon, Chart (wheel, balance, aspects), Calendar (90 days).
 - Any date and time, any time zone. EN/PT. All calculated in the browser (free to host).
 - Inspired by ponteiro.com.br/transitos.php, done better.
+- Built to grow: one shared shell (header, menu, moment line) and a renderer per
+  section, so new pages (Me, Friends, Daily) slot in without touching the others.
 
 ## Next
 1. **Design pass**: a clean, calm "mind space" look in the spirit of Co–Star, darker
