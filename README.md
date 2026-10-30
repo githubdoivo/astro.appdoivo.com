@@ -31,7 +31,8 @@ No server, so hosting is free (GitHub Pages). Where it is going: [ROADMAP.md](RO
 | `sky.js` | The sums: positions, retrograde, sign entry/exit, retrograde periods, aspects, Moon, calendar. No page code. |
 | `app.js` | The shell (header, menu, the moment line, footer) and one small renderer per page section. A page only renders the sections it has. |
 | `words.js` | Every word in both languages (the tests check both have the same keys). |
-| `astro.css` | The look: a calm first version, to be replaced by the real design. |
+| `astro.css` | The look: ink and gold (direction C of the ChatGPT designs), dark and light follow the device. |
+| `img/` | Ornaments cut from those designs as see-through masks (stars, mountains, moon, planet) plus drawn SVG (arc, star, divider), tinted by CSS so one file serves both themes. |
 | `index.html`, `*/index.html` | The pages: each is a `data-page` plus the sections it shows. `404.html` for lost links. |
 
 **Adding a page:** copy one of the `*/index.html` files, change `data-page` and the

@@ -155,9 +155,12 @@
     if (!r) return "";
     const signs = r.from === r.to ? `${g(SIGN[r.from])} ${esc(w.signs[r.from])}` : `${g(SIGN[r.from])} ${esc(w.signs[r.from])} → ${g(SIGN[r.to])} ${esc(w.signs[r.to])}`;
     const count = esc((r.now ? w.left : w.startsIn).replace("{n}", unit(r.now ? daysTo(r.end) : daysTo(r.start), "d")));
-    return `<p class="merc-title"><span class="glyph">${g(GLYPH.Mercury)}</span>${esc(r.now ? w.mercNow : w.mercNext)}</p>
+    const done = r.now ? Math.min(100, ((when.getTime() - r.start) / (r.end - r.start)) * 100) : 0;
+    return `<span class="merc-planet" aria-hidden="true"></span>
+      <p class="merc-title"><span class="glyph">${g(GLYPH.Mercury)}</span>${esc(r.now ? w.mercNow : w.mercNext)}</p>
       <p class="merc-dates"><time>${esc(fmtDay(r.start))}</time> – <time>${esc(fmtDay(r.end))}</time></p>
-      <p class="muted">${signs} · ${count}</p>`;
+      <p class="meta">${signs} · ${count}</p>
+      ${r.now ? `<p class="merc-track" aria-hidden="true"><span style="width:${done}%"></span></p>` : ""}`;
   }
   function retroList(sky) {
     const row = (r) => {
@@ -252,6 +255,9 @@
         </div>
       </form>`;
     $("foot").innerHTML = `<p data-w="about"></p>`;
+    // The engraved arc, star, moon and planet over the page title (decoration only)
+    const head = document.querySelector(".page-head");
+    if (head) head.insertAdjacentHTML("afterbegin", `<div class="orn" aria-hidden="true"><span class="orn-arc"></span><span class="orn-star"></span><span class="orn-moon"></span><span class="orn-planet"></span><span class="orn-s1"></span><span class="orn-s2"></span><span class="orn-s3"></span></div>`);
   }
 
   function renderPage() {
@@ -289,7 +295,7 @@
     document.querySelectorAll("#nav a").forEach((a) => (a.textContent = w.nav[a.dataset.page]));
     document.querySelectorAll("[data-wn]").forEach((el) => (el.textContent = w.nav[el.dataset.wn]));
     $("nav").setAttribute("aria-label", w.navLabel);
-    const b = $("lang"); b.textContent = w.other; b.setAttribute("aria-label", `${w.other}: ${w.otherLabel}`);
+    const b = $("lang"); b.innerHTML = lang === "en" ? "<b>EN</b> / PT" : "EN / <b>PT</b>"; b.setAttribute("aria-label", `EN / PT: ${w.otherLabel}`);
     $("prev").setAttribute("aria-label", w.prevDay); $("next").setAttribute("aria-label", w.nextDay);
     $("change").textContent = $("controls").hidden ? w.change : w.close;
     $("change").setAttribute("aria-label", $("controls").hidden ? w.changeLabel : w.close);

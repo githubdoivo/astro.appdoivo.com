@@ -1,175 +1,227 @@
-/* Astro: calm, black and white, lots of room. The landing page is almost only
-   the table; everything else lives on its own quiet page. The final look will
-   come from a mockup; this file is the part to replace. */
+/* Astro: ink and gold. A night sky engraved in fine gold lines on near-black,
+   and the same engraving in brown ink on cream by day (it follows the device).
+   The landing page is almost only the table; everything else has its own page.
+   Ornaments (img/) are see-through masks, so one file paints both themes. */
 :root {
-  --bg: #f4f3ef; --fg: #141416; --muted: #66645f; --faint: #6e6c66; --line: #dcdad3; --card: #fbfaf7;
-  --fire: #b8452c; --earth: #5f6c31; --air: #a87f1c; --water: #335f99;
-  --harm: #335f99; --tense: #a93a22;
-  --serif: "Instrument Serif", Georgia, serif;
-  --sans: Inter, system-ui, sans-serif;
+  --bg: #f4ede0; --fg: #1d1812; --muted: #5c5142; --faint: #6b5f4d;
+  --line: #ddd0b8; --edge: #c7ac7e; --card: rgba(251, 247, 239, .78);
+  --gold: #8a6428; --orn: #6a5233; --orn-soft: rgba(106, 82, 51, .5);
+  --fire: #a8442a; --earth: #5d6a2e; --air: #94701c; --water: #355f95;
+  --harm: #355f95; --tense: #a8442a;
+  --serif: "Cormorant Garamond", Georgia, serif;
+  --text: "EB Garamond", Georgia, serif;
   --sym: "Noto Sans Symbols", "Noto Sans Symbols 2", "Segoe UI Symbol", "Apple Symbols", sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0d0d0f; --fg: #ecebe6; --muted: #a09e98; --faint: #8f8d87; --line: #2a2a2e; --card: #141417;
-    --fire: #e0735a; --earth: #a3b267; --air: #e3bd5c; --water: #7aa3dc;
-    --harm: #7aa3dc; --tense: #ec7f63;
+    --bg: #0b0a09; --fg: #efe6d3; --muted: #b5a88f; --faint: #9a8e78;
+    --line: #29231a; --edge: #5f4d30; --card: rgba(17, 15, 12, .72);
+    --gold: #d4ae6e; --orn: #c9a46a; --orn-soft: rgba(201, 164, 106, .55);
+    --fire: #e38c6c; --earth: #adb67c; --air: #dcbc6c; --water: #92a9c8;
+    --harm: #92a9c8; --tense: #e38c6c;
     color-scheme: dark;
   }
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); overflow-x: clip; }
 body {
-  margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--sans);
+  margin: 0; background: var(--bg); color: var(--fg); font: 18px/1.5 var(--text);
+  font-variant-numeric: lining-nums;
   padding-inline: max(20px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-right));
-  min-height: 100svh; display: flex; flex-direction: column;
+  min-height: 100svh; display: flex; flex-direction: column; position: relative; overflow-x: clip;
 }
-main, .top, .foot { width: 100%; max-width: 880px; margin-inline: auto; }
-main { flex: 1; padding-bottom: 48px; }
-h1, h2 { font-family: var(--serif); font-weight: 400; letter-spacing: -.01em; text-wrap: balance; margin: 0; }
-h1 { font-size: clamp(44px, 8vw, 72px); line-height: 1; }
-h2 { font-size: clamp(26px, 4vw, 32px); line-height: 1.15; margin-bottom: 10px; }
-h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0 0 14px; }
+/* The starfield behind the top of every page, fading out as the page goes on */
+body::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: min(760px, 95svh); z-index: -1; pointer-events: none;
+  background: var(--orn); opacity: .8;
+  -webkit-mask: url(/img/stars.webp) center top / max(100%, 1100px) auto no-repeat, linear-gradient(#000 45%, transparent);
+  -webkit-mask-composite: source-in;
+  mask: url(/img/stars.webp) center top / max(100%, 1100px) auto no-repeat, linear-gradient(#000 45%, transparent);
+  mask-composite: intersect;
+}
+main, .top, .foot { width: 100%; max-width: 940px; margin-inline: auto; }
+main { flex: 1; padding-bottom: 40px; }
+h1, h2 { font-family: var(--serif); font-weight: 500; letter-spacing: -.005em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(56px, 11vw, 96px); line-height: 1; }
+h2 { font-size: clamp(30px, 4.6vw, 38px); line-height: 1.1; margin-bottom: 10px; }
+h3 { font-family: var(--serif); font-size: 21px; font-weight: 600; color: var(--muted); margin: 0 0 12px; }
 p { margin: 0; }
-a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a { color: inherit; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 button, select, input { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; border-radius: 2px; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 2px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .muted { color: var(--muted); }
-.glyph { font-family: var(--sym); display: inline-block; width: 1.5em; color: var(--faint); font-weight: 400; }
-.num { font-variant-numeric: tabular-nums; }
-.intro { color: var(--muted); max-width: 60ch; margin: 0 0 28px; }
-section { margin-top: 48px; }
-.page-head { margin: 20px 0 28px; }
+.glyph { font-family: var(--sym); font-weight: 300; display: inline-block; width: 1.6em; color: var(--gold); }
+.num { font-variant-numeric: lining-nums tabular-nums; }
+.intro { color: var(--muted); max-width: 60ch; margin: 0 0 28px; text-wrap: pretty; }
+main > .intro { margin-inline: auto; text-align: center; }
+section { margin-top: 52px; }
 
-/* Header: the name, the language, and a quiet menu */
+/* Header: the name, the language, and the menu with a gold underline */
 .topbar { display: flex; justify-content: space-between; align-items: center; padding-top: max(10px, env(safe-area-inset-top)); }
-.brand { font-family: var(--serif); font-size: 26px; text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+.brand { font-family: var(--serif); font-size: 26px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+.brand::before { content: ""; width: 14px; height: 14px; background: var(--gold); -webkit-mask: url(/img/sparkle.svg) center / contain no-repeat; mask: url(/img/sparkle.svg) center / contain no-repeat; }
 .lang {
-  min-width: 44px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px;
-  background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; letter-spacing: .08em;
+  min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 10px;
+  background: transparent; cursor: pointer; font-size: 15px; letter-spacing: .06em; color: var(--muted);
 }
-.lang:hover { border-color: var(--fg); }
-.nav { margin: 4px 0 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none;
+.lang b { font-weight: 500; color: var(--gold); }
+.lang:hover { border-color: var(--gold); }
+.nav { margin: 2px 0 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none;
        -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
 .nav::-webkit-scrollbar { display: none; }
-.nav ul { list-style: none; margin: 0; padding: 0 40px 0 0; display: flex; gap: 22px; width: max-content; }
-.nav a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent; margin-bottom: -1px; }
+.nav ul { list-style: none; margin: 0; padding: 0 40px 0 0; display: flex; gap: 26px; width: max-content; }
+.nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 28px; font-size: 17px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .nav a:hover { color: var(--fg); }
-.nav a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--fg); }
+.nav a[aria-current="page"] { color: var(--gold); border-bottom-color: var(--gold); }
 @media (min-width: 720px) { .nav { -webkit-mask-image: none; mask-image: none; } .nav ul { padding-right: 0; } }
+
+/* Page head: the title under a gold arc, with a star at its top and a moon and a planet beside it */
+.page-head { position: relative; margin: 0 0 44px; padding-top: clamp(96px, 12vw, 128px); text-align: center; }
+.orn { position: absolute; inset: 0; pointer-events: none; }
+.orn span { position: absolute; background: var(--orn); }
+.orn-arc { left: -4%; right: -4%; top: 40px; height: clamp(150px, 21vw, 230px); opacity: .8;
+  -webkit-mask: url(/img/arc.svg) center top / 100% 100% no-repeat; mask: url(/img/arc.svg) center top / 100% 100% no-repeat; }
+.orn-star { left: 50%; top: -6px; width: 44px; height: 70px; translate: -50% 0;
+  -webkit-mask: url(/img/star.svg) center / contain no-repeat; mask: url(/img/star.svg) center / contain no-repeat; }
+.orn-moon { right: 3%; top: 62px; width: clamp(34px, 6vw, 58px); aspect-ratio: 104 / 116;
+  -webkit-mask: url(/img/crescent.webp) center / contain no-repeat; mask: url(/img/crescent.webp) center / contain no-repeat; }
+.orn-planet { left: 3%; top: 86px; width: clamp(34px, 7vw, 70px); aspect-ratio: 140 / 148;
+  -webkit-mask: url(/img/planet.webp) center / contain no-repeat; mask: url(/img/planet.webp) center / contain no-repeat; }
+.orn-s1, .orn-s2, .orn-s3 { width: 11px; height: 11px; -webkit-mask: url(/img/sparkle.svg) center / contain no-repeat; mask: url(/img/sparkle.svg) center / contain no-repeat; }
+.orn-s1 { left: 22%; top: 40px; } .orn-s2 { right: 21%; top: 44px; width: 8px; height: 8px; } .orn-s3 { right: 9%; top: 150px; width: 9px; height: 9px; }
+.page-head h1, .page-head .moment { position: relative; }
+@media (max-width: 640px) { .orn-arc { left: -34%; right: -34%; } .orn-moon { right: 0; top: 70px; } .orn-planet { left: 0; top: 100px; } .orn-s3 { display: none; } }
 
 /* The moment: one quiet line; the controls open on request */
 .moment { margin-top: 14px; }
-.moment-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; color: var(--muted); font-size: 15px; }
-.moment-line b { color: var(--fg); font-weight: 600; }
-.change { min-height: 44px; padding: 0 2px; border: 0; background: none; cursor: pointer; color: var(--fg); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; font-size: 15px; }
-.controls { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: end; margin-top: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.moment-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 14px; color: var(--muted); font-size: 18px; }
+.moment-line b { color: var(--fg); font-weight: 500; }
+.change { min-height: 44px; padding: 0 2px; border: 0; background: none; cursor: pointer; color: var(--gold); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; font-size: 18px; }
+.controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 18px; align-items: end; margin-top: 10px; padding: 18px; border: 1px solid var(--edge); border-radius: 12px; background: var(--card); text-align: left; }
 .controls[hidden] { display: none; }
-.field { display: grid; gap: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); min-width: 0; }
+.field { display: grid; gap: 6px; font-size: 15px; color: var(--muted); min-width: 0; }
 .field input, .field select {
-  min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg);
-  font-size: 16px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--fg); max-width: 100%;
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--edge); border-radius: 8px; background: var(--bg);
+  font-size: 17px; color: var(--fg); max-width: 100%;
 }
 .field select { width: min(300px, 100%); }
 #tz-offset { font-weight: 400; }
 .steps { display: flex; gap: 8px; }
-.steps button { min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 500; }
-.steps button:hover { border-color: var(--fg); }
-.steps button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.steps button { min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 999px; background: transparent; cursor: pointer; font-size: 17px; }
+.steps button:hover { border-color: var(--gold); }
+.steps button[aria-pressed="true"] { background: var(--gold); color: var(--bg); border-color: var(--gold); }
 
-/* The almanac: the landing page's table */
-.table-wrap { overflow-x: auto; }
-.almanac { width: 100%; border-collapse: collapse; font-size: 16px; }
-.almanac th, .almanac td { text-align: left; padding: 15px 16px 15px 0; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: baseline; }
-.almanac thead th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); padding-block: 10px; border-bottom-color: var(--fg); }
-.almanac tbody th { font-weight: 500; }
+/* The almanac: the landing page's table, in a fine gold frame */
+.table-wrap { overflow-x: auto; border: 1px solid var(--edge); border-radius: 14px; background: var(--card); padding: 6px 22px; }
+.almanac { width: 100%; border-collapse: collapse; font-size: 18px; }
+.almanac th, .almanac td { text-align: left; padding: 10px 16px 10px 0; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: baseline; }
+.almanac tbody tr:last-child > * { border-bottom: 0; }
+.almanac thead th { font-weight: 500; color: var(--fg); padding-block: 12px; border-bottom-color: var(--edge); }
+.almanac tbody th { font-weight: 400; }
+.almanac tbody th .glyph { display: none; }
 .almanac td:last-child, .almanac th:last-child { padding-right: 0; }
-.almanac .deg { color: var(--faint); font-size: 14px; margin-left: 4px; font-variant-numeric: tabular-nums; }
+.almanac .deg { color: var(--muted); margin-left: 6px; font-variant-numeric: lining-nums tabular-nums; }
 .almanac .ph { display: none; }
-.retro { color: var(--tense); font-weight: 600; font-size: 12px; text-decoration: none; margin-left: 6px; letter-spacing: .04em; cursor: help; }
-.legend { color: var(--faint); font-size: 14px; margin-top: 14px; }
+.retro { color: var(--gold); font-weight: 500; font-size: 15px; text-decoration: none; margin-left: 8px; cursor: help; }
+.legend { color: var(--faint); font-size: 16px; margin-top: 14px; text-align: center; }
 @media (max-width: 640px) {
+  .table-wrap { padding: 2px 14px; }
+  .almanac { font-size: 17px; }
   .almanac .c-since, .almanac .c-stay { display: none; }
-  .almanac th, .almanac td { padding-right: 12px; white-space: normal; }
-  .almanac .c-until { text-align: right; padding-right: 0; }
-  .almanac .ph { display: block; font-size: 13px; color: var(--faint); }
-  .almanac .deg { display: block; margin: 0 0 0 1.5em; font-size: 13px; }
+  .almanac th, .almanac td { padding-right: 10px; white-space: normal; }
+  .almanac .c-until { padding-right: 0; }
+  .almanac .ph { display: block; font-size: 14px; color: var(--muted); }
+  .almanac .deg { display: block; margin: 0 0 0 1.6em; font-size: 15px; }
 }
-.notes { display: grid; gap: 4px; margin-top: 28px; }
-.note { color: var(--muted); font-size: 15px; }
-.note a { color: var(--fg); margin-left: 6px; white-space: nowrap; }
-.note { line-height: 1.7; }
-.note .lead { color: var(--fg); font-weight: 500; }
-.note.is-merc { color: var(--fg); }
-.note.is-merc .glyph { color: var(--tense); }
+/* The notes under the table, after a line with the Moon in the middle */
+.notes { display: grid; gap: 4px; margin-top: 30px; text-align: center; justify-items: center; }
+.notes:not(:empty)::before { content: ""; width: min(600px, 100%); height: 24px; margin-bottom: 14px; background: var(--orn);
+  -webkit-mask: url(/img/divider.svg) center / 100% 100% no-repeat; mask: url(/img/divider.svg) center / 100% 100% no-repeat; }
+.note { color: var(--muted); font-size: 18px; line-height: 1.7; max-width: 52ch; }
+.note a { color: var(--gold); margin-left: 6px; white-space: nowrap; }
+.note .lead { color: var(--fg); font-weight: 500; margin-right: 6px; }
+.note.is-merc { color: var(--fg); font-size: 20px; }
 
 /* Planets in plain words */
-.cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
-.pcard { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 6px; align-content: start; }
+.cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 14px; }
+.pcard { background: var(--card); border: 1px solid var(--edge); border-radius: 14px; padding: 18px 20px; display: grid; gap: 6px; align-content: start; }
 .pc-top { display: flex; justify-content: space-between; align-items: baseline; }
-.pc-name { font-weight: 600; }
-.pc-deg { color: var(--faint); font-size: 14px; }
-.pc-sign { font-family: var(--serif); font-size: 28px; line-height: 1.15; }
-.pc-sign .glyph { font-size: 20px; }
-.pc-sm { font-family: var(--sans); font-size: 14px; color: var(--muted); }
-.pc-means { font-size: 15px; }
-.pc-dates { font-size: 14px; color: var(--muted); }
-.pc-retro { font-size: 14px; font-weight: 600; color: var(--tense); }
+.pc-name { font-weight: 500; }
+.pc-deg { color: var(--muted); font-size: 16px; }
+.pc-sign { font-family: var(--serif); font-size: 30px; font-weight: 500; line-height: 1.15; }
+.pc-sign .glyph { font-size: 22px; }
+.pc-sm { font-family: var(--text); font-size: 16px; color: var(--muted); }
+.pc-means { font-size: 17px; }
+.pc-dates { font-size: 16px; color: var(--muted); }
+.pc-retro { font-size: 16px; color: var(--gold); }
 
-/* Retrogrades */
-.merc { margin: 0 0 28px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 14px; display: grid; gap: 4px; background: var(--card); }
-.merc.is-now { border-color: var(--tense); }
-.merc-title { font-weight: 600; }
-.merc.is-now .merc-title, .merc.is-now .merc-title .glyph { color: var(--tense); }
-.merc-dates { font-family: var(--serif); font-size: 30px; line-height: 1.1; }
+/* Retrogrades: Mercury in a card of its own, then every planet's period */
+.merc { margin: 0 0 30px; padding: 22px 24px; border: 1px solid var(--edge); border-radius: 14px; background: var(--card);
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 20px; align-items: center; }
+.merc.is-now { border-color: var(--gold); }
+.merc-planet { grid-row: 1 / span 4; width: clamp(56px, 12vw, 92px); aspect-ratio: 140 / 148; background: var(--orn);
+  -webkit-mask: url(/img/planet.webp) center / contain no-repeat; mask: url(/img/planet.webp) center / contain no-repeat; }
+.merc-title { font-family: var(--serif); font-size: clamp(26px, 4vw, 34px); font-weight: 500; line-height: 1.1; }
+.merc-title .glyph { display: none; }
+.merc-dates { font-size: 19px; color: var(--muted); }
+.merc .meta { color: var(--muted); }
+.merc-track { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: 8px; max-width: 320px; }
+.merc-track span { display: block; height: 100%; background: var(--gold); border-radius: 2px; }
 .retros { list-style: none; margin: 0; padding: 0; }
-.retros li { display: grid; grid-template-columns: 9em 11em 1fr auto; gap: 4px 16px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.retros li { display: grid; grid-template-columns: 9em 1fr 11em auto; gap: 4px 16px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .retros .who { font-weight: 500; }
-.retros .state { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
-.retros li.is-now .state { color: var(--tense); }
-.retros .where { color: var(--muted); }
-.retros .track { grid-column: 1 / -1; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.retros .state { font-size: 16px; color: var(--muted); text-align: right; grid-column: 4; grid-row: 1; }
+.retros li.is-now .state { color: var(--gold); }
+.retros .num { grid-column: 2; grid-row: 1; }
+.retros .where { color: var(--muted); grid-column: 3; grid-row: 1; }
+.retros .track { grid-column: 1 / -1; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .retros li:not(.is-now) .track { display: none; }
-.retros .track span { display: block; height: 100%; background: var(--tense); }
-@media (max-width: 640px) { .retros li { grid-template-columns: 1fr auto; } .retros .num, .retros .where { grid-column: 1 / -1; } }
+.retros .track span { display: block; height: 100%; background: var(--gold); }
+@media (max-width: 640px) {
+  .retros li { grid-template-columns: 1fr auto; }
+  .retros .state { grid-column: 2; }
+  .retros .num, .retros .where { grid-column: 1 / -1; grid-row: auto; }
+  .merc { grid-template-columns: 1fr; text-align: left; }
+  .merc-planet { display: none; }
+}
 
 /* Moon */
-.moon-wrap { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.moon-wrap { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 @media (max-width: 640px) { .moon-wrap { grid-template-columns: 1fr; } }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
-.moon-card { display: grid; grid-template-columns: 80px 1fr; gap: 8px 16px; align-items: center; }
-.moon-card svg { width: 80px; height: 80px; }
-.moon-card svg circle { stroke: var(--faint); stroke-width: .8; }
-.moon-dark { fill: #26262b; }
-.moon-lit { fill: #efeee8; }
-.moon-phase, .moon-sign { font-family: var(--serif); font-size: 28px; line-height: 1.1; }
+.card { background: var(--card); border: 1px solid var(--edge); border-radius: 14px; padding: 20px; }
+.moon-card { display: grid; grid-template-columns: 84px 1fr; gap: 8px 16px; align-items: center; }
+.moon-card svg { width: 84px; height: 84px; }
+.moon-card svg circle { stroke: var(--gold); stroke-width: .8; }
+.moon-dark { fill: var(--bg); }
+.moon-lit { fill: var(--gold); opacity: .85; }
+.moon-phase, .moon-sign { font-family: var(--serif); font-size: 30px; font-weight: 500; line-height: 1.1; }
 .moon-card h3 { grid-column: 1 / -1; margin: 14px 0 0; }
 .phases { grid-column: 1 / -1; list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.phases li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px; font-size: 15px; }
-.phases time { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.phases li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px; font-size: 17px; }
+.phases time { color: var(--muted); font-variant-numeric: lining-nums tabular-nums; text-align: right; }
 #moon-sign { display: grid; gap: 6px; }
 
 /* Chart */
 .sky-wheel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 32px; align-items: center; margin-top: 8px; }
 @media (max-width: 760px) { .sky-wheel { grid-template-columns: 1fr; } }
 .wheel svg { width: 100%; max-width: 520px; display: block; margin-inline: auto; overflow: visible; }
-.wheel .ring { fill: none; stroke: var(--fg); stroke-width: 1; }
-.wheel .ring.faint { stroke: var(--line); }
-.wheel .tick { stroke: var(--fg); stroke-width: .6; opacity: .5; }
+.wheel .ring { fill: none; stroke: var(--gold); stroke-width: 1; }
+.wheel .ring.faint { stroke: var(--edge); }
+.wheel .tick { stroke: var(--gold); stroke-width: .6; opacity: .55; }
 .wheel text { font-family: var(--sym); text-anchor: middle; dominant-baseline: central; fill: var(--fg); }
 .wheel .sign { font-size: 15px; }
 .wheel .sign.el-fire { fill: var(--fire); } .wheel .sign.el-earth { fill: var(--earth); }
 .wheel .sign.el-air { fill: var(--air); } .wheel .sign.el-water { fill: var(--water); }
 .wheel .planet { font-size: 17px; }
-.wheel .planet.is-retro { fill: var(--tense); }
-.wheel .mark { stroke: var(--fg); stroke-width: .8; }
-.wheel .dot { fill: var(--fg); }
+.wheel .planet.is-retro { fill: var(--gold); }
+.wheel .mark { stroke: var(--gold); stroke-width: .8; }
+.wheel .dot { fill: var(--gold); }
 .wheel .asp { stroke-width: .9; opacity: .75; }
 .asp-trine, .asp-sextile { stroke: var(--harm); color: var(--harm); }
 .asp-square, .asp-opposition { stroke: var(--tense); color: var(--tense); }
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .two h2, .two .intro { grid-column: 1 / -1; }
 .two .intro { margin-bottom: 8px; }
 @media (max-width: 560px) { .two { grid-template-columns: 1fr; } }
@@ -177,26 +229,34 @@ section { margin-top: 48px; }
 .bar { display: grid; grid-template-columns: 6.5em 1fr 1.5em; grid-template-areas: "name track n" "who who who"; gap: 2px 12px; align-items: center; }
 .bar-name { grid-area: name; font-weight: 500; }
 .bar-track { grid-area: track; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
-.bar-fill { display: block; height: 100%; background: var(--fg); border-radius: 3px; }
+.bar-fill { display: block; height: 100%; background: var(--gold); border-radius: 3px; }
 .bar.el-fire .bar-fill { background: var(--fire); } .bar.el-earth .bar-fill { background: var(--earth); }
 .bar.el-air .bar-fill { background: var(--air); } .bar.el-water .bar-fill { background: var(--water); }
-.bar-n { grid-area: n; text-align: right; font-variant-numeric: tabular-nums; }
-.bar-who { grid-area: who; font-family: var(--sym); color: var(--muted); min-height: 1.5em; }
+.bar-n { grid-area: n; text-align: right; font-variant-numeric: lining-nums tabular-nums; }
+.bar-who { grid-area: who; font-family: var(--sym); color: var(--gold); min-height: 1.5em; }
 .aspects, .coming { list-style: none; margin: 0; padding: 0; }
 .aspects li { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr) minmax(0, 1fr); gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center; }
 .asp-glyph { font-family: var(--sym); margin-inline: 4px; }
 @media (max-width: 640px) { .aspects li { grid-template-columns: 1fr auto; } .aspects .num { grid-column: 1 / -1; } }
 
 /* Calendar */
-.month { font-size: 26px; margin: 40px 0 4px; }
+.month { font-size: 32px; margin: 40px 0 4px; }
 #calendar-list > .month:first-child { margin-top: 0; }
 .coming li { display: grid; grid-template-columns: 11em 1fr; gap: 2px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.coming time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.coming time { color: var(--muted); font-variant-numeric: lining-nums tabular-nums; }
 @media (max-width: 640px) { .coming li { grid-template-columns: 1fr; } }
 
-.foot { border-top: 1px solid var(--line); padding-block: 22px max(22px, env(safe-area-inset-bottom)); color: var(--faint); font-size: 13px; }
+/* Footer: the engraved mountains and the lake, then one quiet line */
+.foot { position: relative; padding-block: clamp(120px, 17vw, 160px) max(22px, env(safe-area-inset-bottom)); color: var(--faint); font-size: 15px; text-align: center; }
+.foot::before { content: ""; position: absolute; left: 50%; top: 0; translate: -50% 0; width: min(100vw, 980px); height: clamp(110px, 16vw, 160px); background: var(--orn);
+  -webkit-mask: url(/img/mountains.webp) center bottom / 100% 100% no-repeat, linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-composite: source-in;
+  mask: url(/img/mountains.webp) center bottom / 100% 100% no-repeat, linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-composite: intersect; }
+.foot p { position: relative; max-width: 60ch; margin-inline: auto; }
 .nw { white-space: nowrap; }
-.note .glyph, .coming .glyph { width: 1.25em; }
-.note .lead { margin-right: 6px; }
-.lost { display: grid; align-content: center; gap: 16px; min-height: 80svh; }
-.lost a { display: inline-flex; align-items: center; min-height: 44px; }
+.note .glyph, .coming .glyph { width: 1.3em; }
+.lost { display: grid; align-content: center; justify-items: center; text-align: center; gap: 16px; min-height: 70svh; }
+.lost a { display: inline-flex; align-items: center; min-height: 44px; color: var(--gold); }
+@media (prefers-reduced-motion: no-preference) { .orn-star { animation: glint 6s ease-in-out infinite; } }
+@keyframes glint { 50% { opacity: .6; scale: .92; } }
