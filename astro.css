@@ -1,0 +1,193 @@
+/* Astro: a simple first look (calm, black and white, lots of room). The final
+   design comes later from a mockup; this file is the part to replace. */
+:root {
+  --bg: #f4f3ef; --fg: #141416; --muted: #6b6a66; --line: #d9d7d0; --card: #fbfaf7;
+  --fire: #c4492f; --earth: #6d7a3a; --air: #c79a2a; --water: #3b6aa8;
+  --harm: #3b6aa8; --tense: #a93a22; --accent: #141416;
+  --serif: "Instrument Serif", Georgia, serif;
+  --sans: Inter, system-ui, sans-serif;
+  --sym: "Noto Sans Symbols", "Noto Sans Symbols 2", "Segoe UI Symbol", "Apple Symbols", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d0d0f; --fg: #ecebe6; --muted: #9a9892; --line: #2a2a2e; --card: #151518;
+    --fire: #e0735a; --earth: #a3b267; --air: #e3bd5c; --water: #7aa3dc;
+    --harm: #7aa3dc; --tense: #e0735a; --accent: #ecebe6;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 var(--sans);
+  padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+}
+main, .top, .foot { max-width: 1040px; margin-inline: auto; }
+h1, h2 { font-family: var(--serif); font-weight: 400; letter-spacing: -.01em; text-wrap: balance; }
+h1 { font-size: clamp(40px, 7vw, 72px); line-height: 1; margin: 8px 0 28px; }
+h2 { font-size: clamp(28px, 4vw, 36px); margin: 0 0 16px; }
+h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 12px; }
+p { margin: 0; }
+section { padding-block: 40px; border-top: 1px solid var(--line); }
+.hero { border-top: 0; padding-top: 16px; }
+.muted { color: var(--muted); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.glyph { font-family: var(--sym); display: inline-block; min-width: 1.4em; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+a { color: inherit; text-underline-offset: 3px; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+
+.top { display: flex; justify-content: space-between; align-items: center; padding-top: max(12px, env(safe-area-inset-top)); }
+.brand { font-family: var(--serif); font-size: 26px; }
+.lang, .steps button {
+  min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--fg); border-radius: 999px;
+  background: transparent; cursor: pointer; font-size: 14px; font-weight: 500; letter-spacing: .04em;
+}
+.lang:hover, .steps button:hover, .steps button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+/* The moment */
+.controls { display: flex; flex-wrap: wrap; gap: 16px 20px; align-items: end; }
+.field { display: grid; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.field input, .field select {
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+  font-size: 16px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--fg); max-width: 100%;
+}
+.field select { max-width: min(320px, 100%); }
+#tz-offset { font-weight: 400; }
+.steps { display: flex; gap: 8px; }
+
+/* Mercury retrograde: always shown, loud only while it is happening */
+.merc { margin: 0 0 8px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; display: grid; gap: 4px; background: var(--card); }
+.merc.is-now { border-color: var(--tense); }
+.merc-title { font-weight: 600; }
+.merc.is-now .merc-title, .merc.is-now .merc-title .glyph { color: var(--tense); }
+.merc-dates { font-family: var(--serif); font-size: 28px; line-height: 1.1; }
+
+/* Wheel and Moon */
+.sky { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+.wheel svg { width: 100%; max-width: 520px; display: block; margin-inline: auto; overflow: visible; }
+.wheel .ring { fill: none; stroke: var(--fg); stroke-width: 1; }
+.wheel .ring.faint { stroke: var(--line); }
+.wheel .tick { stroke: var(--fg); stroke-width: .6; opacity: .5; }
+.wheel text { font-family: var(--sym); text-anchor: middle; dominant-baseline: central; fill: var(--fg); }
+.wheel .sign { font-size: 15px; }
+.wheel .sign.el-fire { fill: var(--fire); } .wheel .sign.el-earth { fill: var(--earth); }
+.wheel .sign.el-air { fill: var(--air); } .wheel .sign.el-water { fill: var(--water); }
+.wheel .planet { font-size: 17px; }
+.wheel .planet.is-retro { fill: var(--tense); }
+.wheel .mark { stroke: var(--fg); stroke-width: .8; }
+.wheel .dot { fill: var(--fg); }
+.wheel .asp { stroke-width: .9; opacity: .75; }
+.asp-trine, .asp-sextile { stroke: var(--harm); color: var(--harm); }
+.asp-square, .asp-opposition { stroke: var(--tense); color: var(--tense); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+
+.moon-card { display: grid; grid-template-columns: 80px 1fr; gap: 8px 16px; align-items: center; }
+.moon-card svg { width: 80px; height: 80px; }
+.moon-card svg circle { stroke: var(--muted); stroke-width: .8; }
+.moon-dark { fill: #26262b; }
+.moon-lit { fill: #efeee8; }
+.moon-phase { font-family: var(--serif); font-size: 26px; line-height: 1.1; }
+.moon-card h3 { grid-column: 1 / -1; margin: 12px 0 0; }
+.phases { grid-column: 1 / -1; list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.phases li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px; font-size: 15px; }
+.phases time { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+
+/* Planets table: a table on wide screens, a list of cards on phones */
+.table-wrap { overflow-x: auto; }
+.planets { width: 100%; border-collapse: collapse; font-size: 15px; }
+.planets th, .planets td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.planets thead th { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.planets tbody th { font-weight: 600; }
+.planets .cap { display: none; }
+.retro { color: var(--tense); font-weight: 600; text-decoration: none; margin-left: 4px; }
+@media (max-width: 720px) {
+  .planets thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .planets, .planets tbody { display: block; }
+  .planets tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .planets th, .planets td { display: block; padding: 0; border: 0; white-space: normal; }
+  .planets td.num:nth-child(3) { text-align: right; }
+  .planets tbody th, .planets td:nth-child(2), .planets td:nth-child(3) { font-size: 16px; }
+  .planets td:nth-child(4), .planets td:nth-child(5), .planets td:nth-child(6) { font-size: 14px; }
+  .planets .cap { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+}
+
+/* Retrogrades */
+.retros { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.retros li { display: grid; grid-template-columns: 9em 11em 1fr auto; gap: 4px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.retros .who { font-weight: 600; }
+.retros .state { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.retros li.is-now .state { color: var(--tense); }
+.retros .where { color: var(--muted); }
+.retros .track { grid-column: 1 / -1; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.retros li:not(.is-now) .track { display: none; }
+.retros .track span { display: block; height: 100%; background: var(--tense); }
+@media (max-width: 720px) { .retros li { grid-template-columns: 1fr auto; } .retros .num, .retros .where { grid-column: 1 / -1; } }
+
+/* Balance */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.two h2 { grid-column: 1 / -1; }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.bar { display: grid; grid-template-columns: 6.5em 1fr 1.5em; grid-template-areas: "name track n" "who who who"; gap: 2px 12px; align-items: center; }
+.bar-name { grid-area: name; font-weight: 500; }
+.bar-track { grid-area: track; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--fg); border-radius: 4px; }
+.bar.el-fire .bar-fill { background: var(--fire); } .bar.el-earth .bar-fill { background: var(--earth); }
+.bar.el-air .bar-fill { background: var(--air); } .bar.el-water .bar-fill { background: var(--water); }
+.bar-n { grid-area: n; text-align: right; font-variant-numeric: tabular-nums; }
+.bar-who { grid-area: who; font-family: var(--sym); color: var(--muted); min-height: 1.5em; }
+
+/* Aspects and what comes next */
+.aspects, .coming { list-style: none; margin: 0; padding: 0; }
+.aspects li { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr) minmax(0, 1fr); gap: 4px 16px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: center; }
+.asp-glyph { font-family: var(--sym); margin-inline: 4px; }
+@media (max-width: 720px) { .aspects li { grid-template-columns: 1fr auto; } .aspects .num { grid-column: 1 / -1; } }
+.coming li { display: grid; grid-template-columns: 12em 1fr; gap: 4px 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.coming time { color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) { .coming li { grid-template-columns: 1fr; } }
+#coming-list { margin-top: 12px; }
+
+.later p { color: var(--muted); max-width: 60ch; }
+.foot { border-top: 1px solid var(--line); padding-block: 24px max(24px, env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; display: grid; gap: 4px; }
+.foot a { display: inline-flex; align-items: center; min-height: 44px; }
+
+@media (max-width: 860px) { .sky { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .two { grid-template-columns: 1fr; } }
+
+/* Plain-language first: summary line, planet cards, details folded away */
+.summary { font-size: clamp(18px, 2.4vw, 22px); line-height: 1.45; margin: 0 0 20px; text-wrap: pretty; }
+.summary .lead { font-family: var(--serif); font-size: 1.25em; }
+.tense { color: var(--tense); font-weight: 600; }
+.intro { max-width: 62ch; margin: -6px 0 20px; }
+.head-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.head-row h2 { margin: 0 0 16px; }
+.view { display: inline-flex; border: 1px solid var(--fg); border-radius: 999px; padding: 3px; margin-bottom: 16px; }
+.view button { min-height: 44px; min-width: 64px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 500; }
+.view button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.pcard { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; }
+.pcard.is-retro { border-color: color-mix(in srgb, var(--tense) 55%, var(--line)); }
+.pc-top { display: flex; justify-content: space-between; align-items: baseline; }
+.pc-name { font-weight: 600; }
+.pc-deg { color: var(--muted); font-size: 14px; }
+.pc-sign { font-family: var(--serif); font-size: 28px; line-height: 1.15; }
+.pc-sign .glyph { font-size: 20px; }
+.pc-sm { font-family: var(--sans); font-size: 14px; color: var(--muted); }
+.pc-means { font-size: 15px; }
+.pc-dates { font-size: 14px; }
+.pc-retro { font-size: 14px; font-weight: 600; color: var(--tense); }
+.moon-sec .moon-card { max-width: 560px; }
+.more { border-top: 1px solid var(--line); }
+.more > summary {
+  list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px;
+  min-height: 44px; padding-block: 28px; font-family: var(--serif); font-size: clamp(28px, 4vw, 36px);
+}
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary::after { content: "+"; font-family: var(--sans); font-size: 26px; margin-left: auto; }
+.more[open] > summary::after { content: "−"; }
+.more > summary .muted { font-family: var(--sans); font-size: 15px; }
+.sky { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+.two .intro { grid-column: 1 / -1; }
+.nw { white-space: nowrap; }

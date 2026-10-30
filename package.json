@@ -1,0 +1,15 @@
+{
+  "name": "astro",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "astronomy-engine": "2.1.19"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0"
+  }
+}

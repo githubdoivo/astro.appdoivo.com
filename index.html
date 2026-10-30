@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Astro · The Sky at Any Moment</title>
+<meta name="description" content="Where the planets are right now, or on any date: signs, degrees, retrogrades, aspects, the Moon and what changes next.">
+<meta property="og:title" content="Astro · The Sky at Any Moment">
+<meta property="og:description" content="Where the planets are right now, or on any date: signs, degrees, retrogrades, aspects, the Moon and what changes next.">
+<meta property="og:url" content="https://astro.appdoivo.com">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://astro.appdoivo.com/og-image.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://astro.appdoivo.com">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#f4f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0f" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=Noto+Sans+Symbols:wght@400&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="astro.css?v=6">
+</head>
+<body>
+<header class="top">
+  <p class="brand">Astro</p>
+  <button class="lang" id="lang" type="button">PT</button>
+</header>
+
+<main>
+  <section class="hero">
+    <h1 data-w="tagline">The Sky at Any Moment</h1>
+    <form class="controls" id="controls" onsubmit="return false">
+      <label class="field"><span data-w="skyOn">Sky On</span><input type="datetime-local" id="when" step="60" required></label>
+      <label class="field"><span><span data-w="zone">Time Zone</span> · <span id="tz-offset"></span></span><select id="tz"></select></label>
+      <div class="steps">
+        <button type="button" id="prev" data-wl="prevDay" aria-label="Previous Day">←</button>
+        <button type="button" id="now" aria-pressed="true" data-w="now">Now</button>
+        <button type="button" id="next" data-wl="nextDay" aria-label="Next Day">→</button>
+      </div>
+    </form>
+  </section>
+
+  <p class="summary" id="summary" aria-live="polite"></p>
+
+  <aside class="merc" id="mercury"></aside>
+
+  <section aria-labelledby="h-planets">
+    <div class="head-row">
+      <h2 id="h-planets" data-w="planets">Planets</h2>
+      <div class="view" role="group" data-wl="view" aria-label="View">
+        <button type="button" id="view-cards" aria-pressed="true" data-w="cards">Cards</button>
+        <button type="button" id="view-table" aria-pressed="false" data-w="table">Table</button>
+      </div>
+    </div>
+    <p class="muted intro" data-w="planetsIntro"></p>
+    <ul class="cards" id="planet-cards"></ul>
+    <div class="table-wrap" id="planet-table" hidden>
+      <table class="planets">
+        <thead><tr><th scope="col" data-w="planet">Planet</th><th scope="col" data-w="sign">Sign</th><th scope="col" data-w="position">Position</th><th scope="col" data-w="entered">Entered</th><th scope="col" data-w="leaves">Leaves</th><th scope="col" data-w="stay">Time in Sign</th></tr></thead>
+        <tbody id="planet-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="moon-sec" aria-labelledby="h-moon">
+    <h2 id="h-moon" data-w="moon">Moon</h2>
+    <div class="card moon-card" id="moon-card"></div>
+  </section>
+
+  <section aria-labelledby="h-retros">
+    <h2 id="h-retros" data-w="retros">Retrogrades</h2>
+    <p class="muted intro" data-w="retroIntro"></p>
+    <div id="retro-list"></div>
+  </section>
+
+  <section aria-labelledby="h-coming">
+    <h2 id="h-coming" data-w="coming">Coming Up</h2>
+    <p class="muted intro" data-w="next45">The next 45 days</p>
+    <div id="coming-list"></div>
+  </section>
+
+  <details class="more" id="more">
+    <summary><span data-w="more">More Detail</span><span class="muted" data-w="moreHint"></span></summary>
+
+    <section class="sky" aria-labelledby="h-wheel">
+      <div>
+        <h2 id="h-wheel" data-w="wheel">Zodiac Wheel</h2>
+        <p class="muted intro" data-w="wheelIntro"></p>
+      </div>
+      <div class="wheel" id="wheel"></div>
+    </section>
+
+    <section class="two" aria-labelledby="h-balance">
+      <h2 id="h-balance" data-w="balance">Balance</h2>
+      <p class="muted intro" data-w="balanceIntro"></p>
+      <div class="card"><h3 data-w="elements">Elements</h3><ul class="bars" id="elements"></ul></div>
+      <div class="card"><h3 data-w="modalities">Modalities</h3><ul class="bars" id="modalities"></ul></div>
+    </section>
+
+    <section aria-labelledby="h-aspects">
+      <h2 id="h-aspects" data-w="aspects">Aspects</h2>
+      <p class="muted intro" data-w="aspectsIntro"></p>
+      <div id="aspect-list"></div>
+    </section>
+  </details>
+
+  <section class="later">
+    <h2 data-w="soonTitle">Coming Later</h2>
+    <p data-w="soon"></p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p data-w="about"></p>
+  <p><a href="mailto:mail@ivolopes.com">mail@ivolopes.com</a></p>
+</footer>
+
+<script src="vendor/astronomy.min.js?v=2.1.19"></script>
+<script src="sky.js?v=2"></script>
+<script src="words.js?v=3"></script>
+<script src="app.js?v=4"></script>
+</body>
+</html>
