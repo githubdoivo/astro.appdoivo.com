@@ -41,7 +41,12 @@
   let live = !parsed;                                   // "now" keeps ticking; a chosen date stays put
 
   const loc = () => (lang === "pt" ? "pt-PT" : "en-GB");
-  const fmtDay = (t) => new Date(t).toLocaleDateString(loc(), { timeZone: zone, day: "numeric", month: "short", year: "numeric" });
+  // Dates written the way each language writes them by hand: "29 Oct 2026", "29 out 2026"
+  // (pt-PT's own short format is numeric, "29/10/2026", which reads like a form).
+  const MON = { en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"], pt: ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"] };
+  const parts = (t) => Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: zone, year: "numeric", month: "numeric", day: "numeric" }).formatToParts(new Date(t)).map((x) => [x.type, x.value]));
+  const dm = (t) => { const p = parts(t); return `${+p.day} ${MON[lang][p.month - 1]}`; };
+  const fmtDay = (t) => `${dm(t)} ${parts(t).year}`;
   const fmtTime = (t) => new Date(t).toLocaleTimeString(loc(), { timeZone: zone, hour: "2-digit", minute: "2-digit" });
   const fmtWhen = (t) => `${fmtDay(t)}, ${fmtTime(t)}`;
   const deg = (d) => { const a = Math.floor(d), m = Math.floor((d - a) * 60); return `${a}°${String(m).padStart(2, "0")}′`; };
@@ -59,6 +64,9 @@
     return [Y && unit(Y, "y"), M && unit(M, "m"), D && unit(D, "d")].filter(Boolean).join(" ") || unit(0, "d");
   }
   const localInput = (d) => new Date(d.getTime() + offset(d.getTime()) * 60000).toISOString().slice(0, 16);
+  const CITY_PT = { Lisbon: "Lisboa", Madeira: "Madeira", Azores: "Açores", Sao_Paulo: "São Paulo", London: "Londres", Paris: "Paris", Madrid: "Madrid", Berlin: "Berlim",
+    Rome: "Roma", Brussels: "Bruxelas", Amsterdam: "Amesterdão", Zurich: "Zurique", Geneva: "Genebra", New_York: "Nova Iorque", Los_Angeles: "Los Angeles", Luanda: "Luanda", Maputo: "Maputo", Cape_Verde: "Cabo Verde", Tokyo: "Tóquio" };
+  const city = (z) => { const c = z.split("/").at(-1); return (lang === "pt" && CITY_PT[c]) || c.replace(/_/g, " "); };
   const zoneName = (z) => { const parts = z.split("/"); return parts.length > 1 ? `${parts.at(-1).replace(/_/g, " ")} (${parts.slice(0, -1).join(" / ").replace(/_/g, " ")})` : z; };
   const gmt = (z) => { const m = (() => { const o = zone; zone = z; const v = offset(Date.now()); zone = o; return v; })();
     return `GMT${m < 0 ? "−" : "+"}${String(Math.floor(Math.abs(m) / 60)).padStart(2, "0")}:${String(Math.abs(m) % 60).padStart(2, "0")}`; };
@@ -108,7 +116,7 @@
       <h3>${esc(w.nextPhases)}</h3><ul class="phases">${next}</ul>`;
   }
 
-  const short = (t) => new Date(t).toLocaleDateString(loc(), { timeZone: zone, day: "numeric", month: "short" });
+  const short = (t) => dm(t);
   const shortOrYear = (t) => (Math.abs(t - when.getTime()) > 300 * 86400000 ? fmtDay(t) : short(t));
   function planetCards(sky) {
     const rp = Object.fromEntries(sky.retrogrades.filter((r) => r.now).map((r) => [r.body, r]));
@@ -181,8 +189,8 @@
   const when2 = (p, t) => (t == null ? "—" : p.body === "Moon" ? `${short(t)}, ${fmtTime(t)}` : shortOrYear(t));
   function skyTable(sky) {
     return sky.planets.map((p) => `<tr${p.retro ? ' class="is-retro"' : ""}>
-      <th scope="row"><span class="glyph">${g(GLYPH[p.body])}</span>${esc(w.bodies[p.body])}${p.retro ? ` <abbr class="retro" title="${esc(w.retro)}">${w.retroShort}</abbr>` : ""}</th>
-      <td><span class="glyph">${g(SIGN[p.sign])}</span>${esc(w.signs[p.sign])} <span class="deg">${deg(p.deg)}</span></td>
+      <th scope="row"><span class="nw"><span class="glyph">${g(GLYPH[p.body])}</span>${esc(w.bodies[p.body])}${p.retro ? `<abbr class="retro" title="${esc(w.retro)}">${w.retroShort}</abbr>` : ""}</span></th>
+      <td><span class="nw"><span class="glyph">${g(SIGN[p.sign])}</span>${esc(w.signs[p.sign])}</span> <span class="deg">${deg(p.deg)}</span></td>
       <td class="num c-since">${esc(when2(p, p.since))}</td>
       <td class="num c-until">${esc(when2(p, p.until))}<small class="ph">${esc(w.since)} ${esc(when2(p, p.since))}</small></td>
       <td class="num c-stay">${esc(span(p.since, p.until))}</td></tr>`).join("");
@@ -265,7 +273,7 @@
 
   function draw() {
     const full = new Date(when).toLocaleDateString(loc(), { timeZone: zone, weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    $("moment-text").innerHTML = `${live ? `<b>${esc(w.now)}</b> · ` : ""}<time>${esc(full)}, ${esc(fmtTime(when))}</time> · ${esc(zoneName(zone).replace(/ \(.*\)$/, ""))}`;
+    $("moment-text").innerHTML = `${live ? `<b>${esc(w.now)}</b> · ` : ""}<time>${esc(full)}, ${esc(fmtTime(when))}</time> · ${esc(city(zone))}`;
     $("when").value = localInput(when);
     $("now").setAttribute("aria-pressed", String(live));
     document.querySelectorAll("#nav a").forEach((a) => (a.href = link(a.dataset.page)));

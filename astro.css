@@ -92,7 +92,7 @@ section { margin-top: 48px; }
 .legend { color: var(--faint); font-size: 14px; margin-top: 14px; }
 @media (max-width: 640px) {
   .almanac .c-since, .almanac .c-stay { display: none; }
-  .almanac th, .almanac td { padding-right: 8px; white-space: normal; }
+  .almanac th, .almanac td { padding-right: 12px; white-space: normal; }
   .almanac .c-until { text-align: right; padding-right: 0; }
   .almanac .ph { display: block; font-size: 13px; color: var(--faint); }
   .almanac .deg { display: block; margin: 0 0 0 1.5em; font-size: 13px; }
