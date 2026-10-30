@@ -3,6 +3,7 @@
 window.WORDS = {
   en: {
     lang: "en", other: "PT", otherLabel: "Ver em português", toDark: "Dark Mode", toLight: "Light Mode",
+    place: "Place", placeSearch: "Search a City", searching: "Searching…", noPlaces: "No Places Found", searchDown: "Search Unavailable, Try Again", tzAuto: "Time Zone: {z}",
     retIntro: "A planet returns when it comes back to the exact place it had when you were born. The best known is the Saturn return, around 29, 58 and 87: a time to take stock and grow up a little more.",
     bornDate: "Birth Date", bornTime: "Birth Time", bornZone: "Birth Place", findReturns: "Find My Returns", forget: "Forget",
     bornHint: "No birth time? Leave 12:00: only the Moon moves enough for it to matter. Kept only on this device.",
@@ -33,7 +34,7 @@ window.WORDS = {
     nav: { sky: "Sky", planets: "Planets", retrogrades: "Retrogrades", moon: "Moon", chart: "Chart", returns: "Returns", calendar: "Calendar" },
     navLabel: "Sections", skyTitle: "The Sky", change: "Change", close: "Close", changeLabel: "Change the date, time or place",
     since: "Since", untilCol: "Until", legendR: "R: retrograde. Seen from Earth, the planet seems to move backwards for a while.",
-    nextIs: "Next", mercLine: "Mercury is retrograde until {d}.", mercSoon: "Mercury turns retrograde on {d}.", aboutRetro: "About Retrogrades",
+    nextIs: "Next", mercLine: "Mercury is retrograde until {d}.", mercSoon: "Mercury turns retrograde on {d}.", mercDirect: "Mercury is direct. Next retrograde: {r}, in {t}.", aboutRetro: "About Retrogrades",
     calIntro: "What changes in the sky over the next 90 days.", phaseOn: "in", moonIntro: "The Moon changes sign every 2 to 3 days and goes through all its phases in about a month.",
     moonIn: "Moon in {s}", moonUntil: "Until {d}, then {s}", chartIntro: "The same sky as a chart, for those who want more.",
     pageTitle: { sky: "Astro · The Sky at Any Moment", planets: "Astro · Planets", retrogrades: "Astro · Retrogrades", moon: "Astro · Moon", chart: "Astro · Chart", returns: "Astro · Planet Returns", calendar: "Astro · Calendar" },
@@ -55,6 +56,7 @@ window.WORDS = {
   },
   pt: {
     lang: "pt", other: "EN", otherLabel: "View in English", toDark: "Modo Escuro", toLight: "Modo Claro",
+    place: "Local", placeSearch: "Procurar uma Cidade", searching: "A Procurar…", noPlaces: "Nenhum Local Encontrado", searchDown: "Pesquisa Indisponível, Tentar de Novo", tzAuto: "Fuso Horário: {z}",
     retIntro: "Um planeta regressa quando volta ao lugar exato onde estava no momento do nascimento. O mais conhecido é o retorno de Saturno, por volta dos 29, 58 e 87 anos: um tempo de balanço e de crescer um pouco mais.",
     bornDate: "Data de Nascimento", bornTime: "Hora de Nascimento", bornZone: "Local de Nascimento", findReturns: "Calcular Retornos", forget: "Esquecer",
     bornHint: "Sem hora de nascimento, fica 12:00: só a Lua anda o suficiente para fazer diferença. Fica guardado só neste dispositivo.",
@@ -85,7 +87,7 @@ window.WORDS = {
     nav: { sky: "Céu", planets: "Planetas", retrogrades: "Retrogradações", moon: "Lua", chart: "Mapa", returns: "Retornos", calendar: "Calendário" },
     navLabel: "Secções", skyTitle: "O Céu", change: "Alterar", close: "Fechar", changeLabel: "Alterar a data, a hora ou o local",
     since: "Desde", untilCol: "Até", legendR: "R: retrógrado. Visto da Terra, o planeta parece andar para trás durante algum tempo.",
-    nextIs: "A Seguir", mercLine: "Mercúrio está retrógrado até {d}.", mercSoon: "Mercúrio fica retrógrado a {d}.", aboutRetro: "Sobre Retrogradações",
+    nextIs: "A Seguir", mercLine: "Mercúrio está retrógrado até {d}.", mercSoon: "Mercúrio fica retrógrado a {d}.", mercDirect: "Mercúrio está direto. Próxima retrogradação: {r}, daqui a {t}.", aboutRetro: "Sobre Retrogradações",
     calIntro: "O que muda no céu nos próximos 90 dias.", phaseOn: "em", moonIntro: "A Lua muda de signo a cada 2 a 3 dias e passa por todas as fases em cerca de um mês.",
     moonIn: "Lua em {s}", moonUntil: "Até {d}, depois {s}", chartIntro: "O mesmo céu em forma de mapa, para quem quer mais.",
     pageTitle: { sky: "Astro · O Céu a Qualquer Momento", planets: "Astro · Planetas", retrogrades: "Astro · Retrogradações", moon: "Astro · Lua", chart: "Astro · Mapa", returns: "Astro · Retornos Planetários", calendar: "Astro · Calendário" },

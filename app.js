@@ -19,7 +19,11 @@
   let w = WORDS[lang];
 
   // Time zone: ?tz=, else the device's. All times are shown and typed in it.
-  let zone = zones.includes(params.get("tz")) ? params.get("tz") : home;
+  // Any real IANA zone (never the bare "Etc/GMT+3" kind), even one this browser does not list
+  const validZone = (z) => { if (!z || /^Etc\//.test(z)) return false; try { new Intl.DateTimeFormat("en", { timeZone: z }); return true; } catch (_) { return false; } };
+  let zone = validZone(params.get("tz")) ? params.get("tz") : home;
+  // The place shown in the moment line: the city picked in the search, else the zone's city
+  let place = params.get("place") || "";
   // Minutes the zone is ahead of UTC at instant t
   function offset(t) {
     const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: zone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
@@ -207,15 +211,18 @@
     if (e.type === "ingress") return `${who} ${esc(w.enters)} ${sign}${e.retro ? ` <span class="muted">(${esc(w.whileRetro)})</span>` : ""}`;
     return `${who} ${esc(e.type === "retro" ? w.turnsRetro : w.turnsDirect)} ${sign}`;
   }
+  // "in 21 years 5 months": the two largest units are enough this far ahead
+  const rough = (a, b) => span(a, b).split(" ").slice(0, 4).join(" ");
+  // One line about Mercury, retrograde or not: the thing people ask about most
   function skyNotes(sky) {
-    const out = [];
-    const merc = sky.retrogrades.find((r) => r.body === "Mercury");
-    if (merc && merc.now) out.push(`<p class="note is-merc"><span class="glyph">${g(GLYPH.Mercury)}</span>${esc(w.mercLine.replace("{d}", fmtDay(merc.end)))} <a href="${link("retrogrades")}">${esc(w.aboutRetro)}</a></p>`);
-    else if (merc && merc.start - when.getTime() < 21 * 86400000) out.push(`<p class="note"><span class="glyph">${g(GLYPH.Mercury)}</span>${esc(w.mercSoon.replace("{d}", fmtDay(merc.start)))} <a href="${link("retrogrades")}">${esc(w.aboutRetro)}</a></p>`);
-    const next = Sky.upcoming(when, 45)[0];
-    if (next) out.push(`<p class="note"><span class="lead">${esc(w.nextIs)}</span> <time class="nw">${esc(fmtDay(next.time))}</time> · ${eventText(next)} <a href="${link("calendar")}">${esc(w.nav.calendar)}</a></p>`);
-    return out.join("");
+    const m = sky.retrogrades.find((r) => r.body === "Mercury");
+    if (!m) return "";
+    const range = `${dm(m.start)}${parts(m.start).year !== parts(m.end).year ? " " + parts(m.start).year : ""} – ${fmtDay(m.end)}`;
+    const text = m.now ? w.mercLine.replace("{d}", fmtDay(m.end))
+      : w.mercDirect.replace("{r}", range).replace("{t}", rough(when.getTime(), m.start));
+    return `<p class="note is-merc"><span class="glyph">${g(GLYPH.Mercury)}</span>${esc(text)}</p>`;
   }
+
   function calendarList(events) {
     if (!events.length) return `<p class="muted">${esc(w.nothing)}</p>`;
     let html = "", month = "";
@@ -260,8 +267,6 @@
     bornCache = { key, data: { t, data } };
     return bornCache.data;
   }
-  // "in 21 years 5 months": the two largest units are enough this far ahead
-  const rough = (a, b) => span(a, b).split(" ").slice(0, 4).join(" ");
   const ago = (x) => (x > when.getTime() ? w.inT.replace("{t}", rough(when.getTime(), x)) : w.wasPast);
   const ageAt = (t0, x) => w.ageN.replace("{n}", Math.floor((x - t0) / YEAR));
   function passLine(r) {
@@ -299,14 +304,16 @@
   function bornForm() {
     const f = $("born"); if (!f || f.dataset.ready) return;
     f.dataset.ready = "1";
-    const sel = $("born-tz");
-    sel.innerHTML = zones.map((z) => `<option value="${esc(z)}">${esc(zoneName(z))}</option>`).join("");
-    sel.value = born ? born.tz : home;
+    // Birth place: a city search; its time zone comes with it
+    let pick = born ? { tz: born.tz, name: born.place || city(born.tz), lat: born.lat, lon: born.lon } : { tz: home, name: "" };
+    const note = () => ($("born-tz-note").textContent = w.tzAuto.replace("{z}", `${zoneName(pick.tz)} · ${gmt(pick.tz)}`));
+    $("born-place").value = pick.name; note();
+    placePicker($("born-place"), $("born-place-list"), (r) => { pick = { tz: r.tz, name: r.label, lat: r.lat, lon: r.lon }; note(); });
     if (born) { const [d, tm] = born.d.split("T"); $("born-date").value = d; $("born-time").value = tm || "12:00"; $("forget").hidden = false; }
     f.addEventListener("submit", (e) => {
       e.preventDefault();
       if (!$("born-date").value) return;
-      born = { d: `${$("born-date").value}T${$("born-time").value || "12:00"}`, tz: sel.value };
+      born = { d: `${$("born-date").value}T${$("born-time").value || "12:00"}`, tz: pick.tz, place: pick.name, lat: pick.lat, lon: pick.lon };
       try { localStorage.setItem("born", JSON.stringify(born)); } catch (_) {}
       $("forget").hidden = false;
       set("returns-out", returnsOut());
@@ -316,6 +323,7 @@
       born = null; bornCache = null;
       try { localStorage.removeItem("born"); } catch (_) {}
       $("born-date").value = ""; $("born-time").value = "12:00"; $("forget").hidden = true;
+      pick = { tz: home, name: "" }; $("born-place").value = ""; note();
       const q = new URLSearchParams(location.search); q.delete("born"); q.delete("btz");
       history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
       set("returns-out", returnsOut());
@@ -323,10 +331,50 @@
   }
   const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
 
+  // ---- place search: any city in the world, with its time zone (Open-Meteo geocoding, free, no key) ----
+  function placePicker(input, list, onPick) {
+    let items = [], active = -1, timer, ctrl;
+    const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); active = -1; };
+    const show = (html) => { list.innerHTML = html; list.hidden = false; input.setAttribute("aria-expanded", "true"); };
+    const note = (t) => show(`<li class="combo-note" role="presentation">${esc(t)}</li>`);
+    const mark = (i) => {
+      active = i;
+      [...list.querySelectorAll("[role=option]")].forEach((li, j) => li.setAttribute("aria-selected", String(j === i)));
+      const li = $(`${list.id}-${i}`); if (li) { input.setAttribute("aria-activedescendant", li.id); li.scrollIntoView({ block: "nearest" }); }
+    };
+    const choose = (i) => { const r = items[i]; if (!r) return; input.value = r.label; close(); onPick(r); };
+    async function search(q) {
+      ctrl && ctrl.abort(); ctrl = new AbortController(); items = [];
+      note(w.searching);
+      try {
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?count=8&format=json&language=${lang}&name=${encodeURIComponent(q)}`, { signal: ctrl.signal });
+        const data = await res.json();
+        items = (data.results || []).filter((r) => validZone(r.timezone)).map((r) => ({
+          name: r.name, label: [r.name, r.country].filter(Boolean).join(", "),
+          sub: [r.admin1 !== r.name && r.admin1, r.country].filter(Boolean).join(", "), tz: r.timezone, lat: r.latitude, lon: r.longitude,
+        }));
+        if (!items.length) return note(w.noPlaces);
+        show(items.map((r, i) => `<li role="option" id="${list.id}-${i}" aria-selected="false" data-i="${i}"><b>${esc(r.name)}</b><span>${esc(r.sub)}</span></li>`).join(""));
+      } catch (e) { if (e.name !== "AbortError") note(w.searchDown); }
+    }
+    input.addEventListener("input", () => { clearTimeout(timer); const q = input.value.trim(); if (q.length < 2) return close(); timer = setTimeout(() => search(q), 250); });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") return close();
+      if (list.hidden || !items.length) { if (e.key === "Enter") e.preventDefault(); return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); mark((active + 1) % items.length); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); mark((active - 1 + items.length) % items.length); }
+      else if (e.key === "Enter") { e.preventDefault(); choose(active < 0 ? 0 : active); }
+    });
+    list.addEventListener("pointerdown", (e) => e.preventDefault());       // keep the keyboard up while tapping a result
+    list.addEventListener("click", (e) => { const li = e.target.closest("[data-i]"); if (li) choose(+li.dataset.i); });
+    input.addEventListener("blur", () => setTimeout(close, 150));
+    input.addEventListener("focus", () => input.select());
+  }
+
   // ---- the shell: header, menu, the moment, footer (the same on every page) ----
   const PAGES = [["sky", "/"], ["planets", "/planets/"], ["retrogrades", "/retrogrades/"], ["moon", "/moon/"], ["chart", "/chart/"], ["returns", "/returns/"], ["calendar", "/calendar/"]];
   const page = document.body.dataset.page || "sky";
-  const state = () => { const q = new URLSearchParams(); if (!live) q.set("d", localInput(when)); if (zone !== home) q.set("tz", zone); return q.toString(); };
+  const state = () => { const q = new URLSearchParams(); if (!live) q.set("d", localInput(when)); if (zone !== home) q.set("tz", zone); if (place) q.set("place", place); return q.toString(); };
   const link = (key) => { const q = state(); return PAGES.find((p) => p[0] === key)[1] + (q ? "?" + q : ""); };
 
   function shell() {
@@ -338,7 +386,9 @@
     $("moment").innerHTML = `<p class="moment-line"><span id="moment-text"></span><button type="button" class="change" id="change" aria-expanded="false" aria-controls="controls"></button></p>
       <form class="controls" id="controls" hidden>
         <label class="field"><span data-w="skyOn"></span><input type="datetime-local" id="when" step="60" required></label>
-        <label class="field"><span><span data-w="zone"></span> · <span id="tz-offset"></span></span><select id="tz"></select></label>
+        <div class="field place-field"><label for="place" data-w="place"></label>
+          <div class="combo"><input id="place" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="place-list" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="search"><ul id="place-list" class="combo-list" role="listbox" hidden></ul></div>
+          <span class="tz-note" id="tz-offset"></span></div>
         <div class="steps">
           <button type="button" id="prev">←</button>
           <button type="button" id="now" data-w="now"></button>
@@ -371,7 +421,7 @@
 
   function draw() {
     const full = new Date(when).toLocaleDateString(loc(), { timeZone: zone, weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    $("moment-text").innerHTML = `${live ? `<b>${esc(w.now)}</b> · ` : ""}<time>${esc(full)}, ${esc(fmtTime(when))}</time> · ${esc(city(zone))}`;
+    $("moment-text").innerHTML = `${live ? `<b>${esc(w.now)}</b> · ` : ""}<time>${esc(full)}, ${esc(fmtTime(when))}</time> · ${esc(place || city(zone))}`;
     $("when").value = localInput(when);
     $("now").setAttribute("aria-pressed", String(live));
     document.querySelectorAll("#nav a").forEach((a) => (a.href = link(a.dataset.page)));
@@ -392,10 +442,9 @@
     $("prev").setAttribute("aria-label", w.prevDay); $("next").setAttribute("aria-label", w.nextDay);
     $("change").textContent = $("controls").hidden ? w.change : w.close;
     $("change").setAttribute("aria-label", $("controls").hidden ? w.changeLabel : w.close);
-    const sel = $("tz");
-    if (!sel.options.length) sel.innerHTML = zones.map((z) => `<option value="${esc(z)}">${esc(zoneName(z))}</option>`).join("");
-    sel.value = zone;
-    $("tz-offset").textContent = gmt(zone);
+    $("place").placeholder = w.placeSearch; $("place").value = place || city(zone);
+    $("tz-offset").textContent = w.tzAuto.replace("{z}", `${zoneName(zone)} · ${gmt(zone)}`);
+    if ($("born-place")) $("born-place").placeholder = w.placeSearch;
     draw();
   }
 
@@ -405,6 +454,7 @@
     const q = new URLSearchParams(location.search);
     if (live) q.delete("d"); else q.set("d", localInput(d));
     if (zone === home) q.delete("tz"); else q.set("tz", zone);
+    if (place) q.set("place", place); else q.delete("place");
     q.delete("lang");
     history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
     draw();
@@ -422,7 +472,12 @@
     if (!c.hidden) $("when").focus();
   });
   $("when").addEventListener("change", (e) => { if (e.target.value) setWhen(fromWall(e.target.value)); });
-  $("tz").addEventListener("change", (e) => { zone = e.target.value; $("tz-offset").textContent = gmt(zone); setWhen(when, live); });
+  placePicker($("place"), $("place-list"), (r) => {
+    zone = r.tz; place = r.name;
+    $("tz-offset").textContent = w.tzAuto.replace("{z}", `${zoneName(zone)} · ${gmt(zone)}`);
+    setWhen(when, live);
+  });
+  $("controls").addEventListener("submit", (e) => e.preventDefault());
   $("now").addEventListener("click", () => setWhen(new Date(), true));
   $("prev").addEventListener("click", () => setWhen(new Date(when.getTime() - 86400000)));
   $("next").addEventListener("click", () => setWhen(new Date(when.getTime() + 86400000)));

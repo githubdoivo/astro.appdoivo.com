@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=EB+Garamond:wght@400;500&family=Noto+Sans+Symbols:wght@300;400&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/astro.css?v=24">
+<link rel="stylesheet" href="/astro.css?v=26">
 </head>
 <body data-page="returns">
 <header class="top" id="top"></header>
@@ -37,7 +37,9 @@
   <form class="born card" id="born">
     <label class="field"><span data-w="bornDate"></span><input type="date" id="born-date" required min="1900-01-01" max="2100-12-31"></label>
     <label class="field"><span data-w="bornTime"></span><input type="time" id="born-time" value="12:00"></label>
-    <label class="field"><span data-w="bornZone"></span><select id="born-tz"></select></label>
+    <div class="field place-field"><label for="born-place" data-w="bornZone"></label>
+      <div class="combo"><input id="born-place" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="born-place-list" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="search"><ul id="born-place-list" class="combo-list" role="listbox" hidden></ul></div>
+      <span class="tz-note" id="born-tz-note"></span></div>
     <div class="born-go"><button type="submit" class="go" data-w="findReturns"></button><button type="button" class="forget" id="forget" data-w="forget" hidden></button></div>
     <p class="hint" data-w="bornHint"></p>
   </form>
@@ -45,8 +47,8 @@
 </main>
 <footer class="foot" id="foot"></footer>
 <script src="/vendor/astronomy.min.js?v=2.1.19"></script>
-<script src="/sky.js?v=24"></script>
-<script src="/words.js?v=24"></script>
-<script src="/app.js?v=24"></script>
+<script src="/sky.js?v=26"></script>
+<script src="/words.js?v=26"></script>
+<script src="/app.js?v=26"></script>
 </body>
 </html>

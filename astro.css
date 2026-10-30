@@ -335,3 +335,18 @@ section { margin-top: 52px; }
   .sat-list li { grid-template-columns: 2.2em minmax(0, 1fr) auto; }
   .sat-list .state { grid-column: 2 / -1; text-align: left; }
 }
+
+/* Place search: type a city, pick it from the list; its time zone comes with it */
+.place-field { position: relative; }
+.place-field > label { font-size: 15px; color: var(--muted); }
+.controls .place-field { width: min(340px, 100%); }
+.combo { position: relative; }
+.combo input { width: 100%; }
+.combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30; max-height: 300px; overflow-y: auto; overscroll-behavior: contain;
+  margin: 0; padding: 4px; list-style: none; background: var(--bg); border: 1px solid var(--edge); border-radius: 10px; box-shadow: 0 12px 28px rgba(0, 0, 0, .28); }
+.combo-list [role=option] { display: grid; gap: 1px; min-height: 44px; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 17px; color: var(--fg); }
+.combo-list [role=option] b { font-weight: 500; }
+.combo-list [role=option] span { font-size: 14px; color: var(--muted); }
+.combo-list [role=option]:hover, .combo-list [aria-selected=true] { background: var(--line); }
+.combo-note { padding: 10px 12px; color: var(--muted); font-size: 16px; }
+.tz-note { font-size: 14px; color: var(--faint); }

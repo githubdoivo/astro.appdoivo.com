@@ -5,7 +5,18 @@ import AxeBuilder from "@axe-core/playwright";
 const Q = "?lang=en&d=2026-10-29T12:00&tz=Europe/Lisbon";
 const PAGES = ["/", "/planets/", "/retrogrades/", "/moon/", "/chart/", "/returns/", "/calendar/"];
 
+// The city search answers from Open-Meteo; tests get a fixed answer instead, so they never depend on the network
+const CITIES = {
+  "são paulo": [{ name: "São Paulo", admin1: "São Paulo", country: "Brazil", timezone: "America/Sao_Paulo", latitude: -23.55, longitude: -46.63 }],
+  braga: [{ name: "Braga", admin1: "Braga", country: "Portugal", timezone: "Europe/Lisbon", latitude: 41.55, longitude: -8.42 },
+          { name: "Braga", admin1: "Rio Grande do Sul", country: "Brazil", timezone: "America/Sao_Paulo", latitude: -27.6, longitude: -53.7 }],
+  nowhere: [{ name: "Nowhere", country: "Nowhere", timezone: "Etc/GMT+3", latitude: 0, longitude: 0 }],
+};
 test.beforeEach(async ({ page }) => {
+  await page.route(/geocoding-api\.open-meteo\.com/, (route) => {
+    const q = new URL(route.request().url()).searchParams.get("name").toLowerCase();
+    route.fulfill({ json: CITIES[q] ? { results: CITIES[q] } : {} });
+  });
   // Start each test with nothing saved, but keep what the test itself saves across pages
   await page.addInitScript(() => { try { if (!sessionStorage.getItem("fresh")) { localStorage.clear(); sessionStorage.setItem("fresh", "1"); } } catch (_) {} });
 });
@@ -54,6 +65,9 @@ test("the landing page is the table: ten planets, their sign, since, until, retr
   await expect(page.locator("#sky-rows abbr.retro")).toHaveCount(5);           // Mercury, Venus, Saturn, Uranus, Neptune
   await expect(page.locator(".legend")).toContainText("R: retrograde");
   await expect(page.locator("#sky-notes")).toContainText("Mercury is retrograde until 13 Nov 2026");
+  await expect(page.locator("#sky-notes a")).toHaveCount(0);                  // only the Mercury line, no links
+  await page.goto("/?lang=en&d=2026-12-15T12:00&tz=Europe/Lisbon");          // Mercury direct: say so, and when the next retrograde is
+  await expect(page.locator("#sky-notes")).toContainText(/Mercury is direct\. Next retrograde: \d+ \w+ – \d+ \w+ 2027, in \d+ months?/);
   // Nothing else competes with the table: no cards, wheel or open controls
   await expect(page.locator(".pcard, .wheel")).toHaveCount(0);
   await expect(page.locator("#controls")).toBeHidden();
@@ -122,13 +136,24 @@ test("Planets, Moon, Chart and Calendar each show their part", async ({ page }) 
   await expect(page.locator("#calendar-list")).toContainText("Full Moon in");
 });
 
-test("changing the time zone keeps the instant and moves the clock", async ({ page }) => {
+test("picking a city sets its time zone, keeps the instant and moves the clock", async ({ page }) => {
   await page.goto("/" + Q);
   await page.locator("#change").click();
-  await page.locator("#tz").selectOption("America/Sao_Paulo");
+  await page.locator("#place").fill("São Paulo");
+  await page.locator("#place-list [role=option]").first().click();
   await expect(page.locator("#when")).toHaveValue("2026-10-29T09:00");
+  await expect(page.locator("#tz-offset")).toHaveText(/America\/Sao_Paulo|Sao Paulo/);
   await expect(page.locator("#tz-offset")).toHaveText(/GMT−03:00/);
-  await expect(page.locator("#moment-text")).toContainText("Sao Paulo");
+  await expect(page.locator("#moment-text")).toContainText("São Paulo");
+  // Keyboard: arrows and Enter pick; a bare "Etc/GMT" zone never shows up
+  await page.locator("#place").fill("Braga");
+  await expect(page.locator("#place-list [role=option]")).toHaveCount(2);
+  await page.locator("#place").press("ArrowDown");
+  await page.locator("#place").press("Enter");
+  await expect(page.locator("#moment-text")).toContainText("Braga");
+  await expect(page.locator("#when")).toHaveValue("2026-10-29T12:00");
+  await page.locator("#place").fill("Nowhere");
+  await expect(page.locator("#place-list")).toContainText("No Places Found");
 });
 
 test("Portuguese: from the browser, European Portuguese names, remembered across pages", async ({ browser }) => {
@@ -181,7 +206,7 @@ test("no sideways scroll on any page, at any width, light or dark", async ({ bro
 test("touch targets are at least 44px", async ({ page }) => {
   await page.goto("/" + Q);
   await page.locator("#change").click();
-  for (const sel of ["#lang", ".brand", "#change", "#when", "#tz", "#prev", "#now", "#next", "#nav a >> nth=0"]) {
+  for (const sel of ["#lang", ".brand", "#change", "#when", "#place", "#prev", "#now", "#next", "#nav a >> nth=0"]) {
     const b = await page.locator(sel).boundingBox();
     expect(b.height, sel).toBeGreaterThanOrEqual(44);
     expect(b.width, sel).toBeGreaterThanOrEqual(24);
@@ -213,7 +238,9 @@ test("returns: Saturn comes back at about 29 and 58, every planet has a row, and
   await expect(page.locator("#returns-out")).toContainText("Enter a birth date");
   await page.locator("#born-date").fill("1990-01-01");
   await page.locator("#born-time").fill("12:00");
-  await page.locator("#born-tz").selectOption("Europe/Lisbon");
+  await page.locator("#born-place").fill("Braga");
+  await page.locator("#born-place-list [role=option]").first().click();
+  await expect(page.locator("#born-tz-note")).toContainText("GMT+00:00");
   await page.locator("#born button[type=submit]").click();
   const sat = page.locator(".sat-list li");
   await expect(sat).toHaveCount(3);                                         // ages 29, 58, 88
