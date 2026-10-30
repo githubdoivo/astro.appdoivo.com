@@ -71,7 +71,7 @@ section { margin-top: 52px; }
 .brand { font-family: var(--serif); font-size: 26px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
 .brand::before { content: ""; width: 14px; height: 14px; background: var(--gold); -webkit-mask: url(/img/sparkle.svg) center / contain no-repeat; mask: url(/img/sparkle.svg) center / contain no-repeat; }
 .lang {
-  min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 10px;
+  width: 44px; height: 44px; padding: 0; border: 1px solid var(--edge); border-radius: 10px;
   background: transparent; cursor: pointer; font-size: 15px; letter-spacing: .06em; color: var(--muted);
 }
 .lang b { font-weight: 500; color: var(--gold); }
@@ -81,7 +81,7 @@ section { margin-top: 52px; }
 .mode svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .mode .i-sun, .mode.is-dark .i-moon { display: none; }
 .mode.is-dark .i-sun { display: inline; }
-.nav { margin: 2px 0 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none;
+.nav { margin: 2px 0 0; border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; touch-action: pan-x; scrollbar-width: none;
        -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
 .nav::-webkit-scrollbar { display: none; }
 .nav ul { list-style: none; margin: 0; padding: 0 40px 0 0; display: flex; gap: 26px; width: max-content; }
@@ -116,10 +116,14 @@ section { margin-top: 52px; }
 .controls[hidden] { display: none; }
 .field { display: grid; gap: 6px; font-size: 15px; color: var(--muted); min-width: 0; }
 .field input, .field select {
-  min-height: 44px; padding: 0 12px; border: 1px solid var(--edge); border-radius: 8px; background: var(--bg);
+  -webkit-appearance: none; appearance: none; display: block; min-width: 0; min-height: 46px; line-height: 24px; padding: 10px 12px; border: 1px solid var(--edge); border-radius: 8px; background: var(--bg);
   font-size: 17px; color: var(--fg); max-width: 100%;
 }
-.field select { width: min(300px, 100%); }
+.field select { width: min(300px, 100%); padding-right: 36px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gold) 50%), linear-gradient(135deg, var(--gold) 50%, transparent 50%);
+  background-position: right 18px center, right 13px center; background-size: 5px 5px; background-repeat: no-repeat; }
+.field input::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.field input::-webkit-datetime-edit { padding: 0; }
 #tz-offset { font-weight: 400; }
 .steps { display: flex; gap: 8px; }
 .steps button { min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 999px; background: transparent; cursor: pointer; font-size: 17px; }
@@ -139,14 +143,16 @@ section { margin-top: 52px; }
 .almanac .ph { display: none; }
 .retro { color: var(--gold); font-weight: 500; font-size: 15px; text-decoration: none; margin-left: 8px; cursor: help; }
 .legend { color: var(--faint); font-size: 16px; margin-top: 14px; text-align: center; }
+/* Phones: the same table as on a computer, every column. When it is wider than
+   the screen it scrolls sideways inside its frame, with the planet column held. */
 @media (max-width: 640px) {
-  .table-wrap { padding: 2px 14px; }
-  .almanac { font-size: 17px; }
-  .almanac .c-since, .almanac .c-stay { display: none; }
-  .almanac th, .almanac td { padding-right: 10px; white-space: normal; }
-  .almanac .c-until { padding-right: 0; }
-  .almanac .ph { display: block; font-size: 14px; color: var(--muted); }
-  .almanac .deg { display: block; margin: 0 0 0 1.6em; font-size: 15px; }
+  .table-wrap { padding: 0; background: var(--bg); overscroll-behavior-x: contain; }
+  .almanac { font-size: 16px; }
+  .almanac th, .almanac td { padding: 9px 14px 9px 0; }
+  .almanac tr > :first-child { position: sticky; left: 0; z-index: 1; background: var(--bg); padding-left: 12px; }
+  .almanac tr > :last-child { padding-right: 14px; }
+  .almanac .deg { margin-left: 4px; font-size: 14px; }
+  .almanac .glyph { width: 1.35em; }
 }
 /* The notes under the table, after a line with the Moon in the middle */
 .notes { display: grid; gap: 4px; margin-top: 30px; text-align: center; justify-items: center; }

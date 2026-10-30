@@ -57,7 +57,7 @@ test("the landing page is the table: ten planets, their sign, since, until, retr
   // Nothing else competes with the table: no cards, wheel or open controls
   await expect(page.locator(".pcard, .wheel")).toHaveCount(0);
   await expect(page.locator("#controls")).toBeHidden();
-  if (!isMobile) await expect(page.locator("thead .c-since")).toBeVisible();
+  for (const c of [".c-since", ".c-until", ".c-stay"]) await expect(page.locator(`thead ${c}`)).toBeVisible();   // the full table on phones too
 });
 
 test("the date and place sit in one line; Change opens the controls", async ({ page }) => {
