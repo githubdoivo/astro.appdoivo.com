@@ -164,5 +164,43 @@
     };
   }
 
-  root.Sky = { BODIES, ELEMENT, MODALITY, ASPECTS, sky, upcoming, calendar, retrograde, lon, speed };
+  // ---- Returns: when a body comes back to the longitude it had at birth ----
+  // About how long each body takes to go round the zodiac once, in days
+  const PERIOD = { Sun: 365.25, Moon: 27.32, Mercury: 365.25, Venus: 365.25, Mars: 687, Jupiter: 4333, Saturn: 10759, Uranus: 30687, Neptune: 60190, Pluto: 90560 };
+  // Step small enough never to jump over a crossing (a few degrees at most)
+  const RSTEP = { Sun: 1, Moon: 0.2, Mercury: 0.5, Venus: 0.5, Mars: 1, Jupiter: 3, Saturn: 4, Uranus: 6, Neptune: 6, Pluto: 6 };
+  // Every moment in [from, to] (ms) when the body sits exactly at `target`, to the minute
+  function crossings(body, target, from, to) {
+    const diff = (t) => { const d = norm(lon(body, at(t)) - target); return d > 180 ? d - 360 : d; };
+    const step = RSTEP[body] * DAY, out = [];
+    let a = from, da = diff(a);
+    for (let b = from + step; a < to; b += step) {
+      const db = diff(b);
+      // A sign change near 0°, not the jump at 180° on the far side
+      if ((da < 0) !== (db < 0) && Math.abs(da - db) < 90) {
+        let x = a, y = b, dx = da;
+        while (y - x > 60000) { const m = (x + y) / 2, dm = diff(m); if ((dm < 0) === (dx < 0)) { x = m; dx = dm; } else y = m; }
+        if (y >= from && y <= to) out.push(y);
+      }
+      a = b; da = db;
+    }
+    return out;
+  }
+  // Returns of `body` for someone born at `born` (ms), between from and to.
+  // A slow planet can pass the spot up to three times (forward, back while
+  // retrograde, forward again); those passes count as one return.
+  function returns(body, born, from, to) {
+    const target = lon(body, at(born)), P = PERIOD[body] * DAY;
+    const start = Math.max(from, born + P / 2);            // not the birth itself, nor a retrograde wobble just after it
+    const passes = start < to ? crossings(body, target, start, to) : [];
+    const out = [];
+    for (const t of passes) {
+      const last = out[out.length - 1];
+      if (last && t - last.passes[last.passes.length - 1] < P * 0.3) last.passes.push(t);
+      else out.push({ passes: [t] });
+    }
+    return out.map((r) => ({ start: r.passes[0], end: r.passes[r.passes.length - 1], passes: r.passes }));
+  }
+
+  root.Sky = { BODIES, ELEMENT, MODALITY, ASPECTS, PERIOD, sky, upcoming, calendar, retrograde, lon, speed, returns };
 })(typeof window !== "undefined" ? window : globalThis);

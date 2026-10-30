@@ -232,8 +232,97 @@
       <p class="muted">${esc(w.moonUntil.replace("{d}", `${short(m.until)}, ${fmtTime(m.until)}`).replace("{s}", w.signs[nextSign]))}</p>`;
   }
 
+  // ---- returns: when each planet comes back to its place at birth ----
+  const YEAR = 365.2425 * 86400000;
+  const inZone = (z, f) => { const o = zone; zone = z; try { return f(); } finally { zone = o; } };
+  // The birth: from the link (?born=1990-01-01T08:30&btz=Europe/Lisbon), else saved on this device
+  function readBorn() {
+    const q = new URLSearchParams(location.search);
+    if (q.get("born")) return { d: q.get("born"), tz: zones.includes(q.get("btz")) ? q.get("btz") : home };
+    try { const b = JSON.parse(localStorage.getItem("born")); if (b && b.d) return b; } catch (_) {}
+    return null;
+  }
+  let born = readBorn(), bornCache = null;
+  function returnsData() {
+    const t = inZone(born.tz, () => fromWall(born.d).getTime());
+    const key = `${t}|${Math.floor(when.getTime() / 86400000)}`;
+    if (bornCache && bornCache.key === key) return bornCache.data;
+    const now = when.getTime(), data = {};
+    for (const b of Sky.BODIES) {
+      const P = Sky.PERIOD[b] * 86400000, l = Sky.lon(b, new Date(t));
+      // Saturn and Uranus: every return in a long life; the rest: the one before now and the one after
+      const lifelong = b === "Saturn" || b === "Uranus";
+      const list = P > 100 * YEAR ? [] : lifelong ? Sky.returns(b, t, t, t + 92 * YEAR) : Sky.returns(b, t, Math.max(t, now - 1.2 * P), now + 1.2 * P);
+      data[b] = { lon: l, sign: Math.floor(l / 30), deg: l % 30, list };
+    }
+    bornCache = { key, data: { t, data } };
+    return bornCache.data;
+  }
+  // "in 21 years 5 months": the two largest units are enough this far ahead
+  const rough = (a, b) => span(a, b).split(" ").slice(0, 4).join(" ");
+  const ago = (x) => (x > when.getTime() ? w.inT.replace("{t}", rough(when.getTime(), x)) : w.wasPast);
+  const ageAt = (t0, x) => w.ageN.replace("{n}", Math.floor((x - t0) / YEAR));
+  function passLine(r) {
+    if (r.passes.length === 1) return `<time>${esc(fmtDay(r.start))}</time>`;
+    return `<time>${esc(fmtDay(r.start))}</time> – <time>${esc(fmtDay(r.end))}</time>`;
+  }
+  function returnsOut() {
+    if (!born) return `<p class="muted ret-empty">${esc(w.retEmpty)}</p>`;
+    const { t, data } = returnsData(), now = when.getTime();
+    const pos = (b) => `<span class="glyph">${g(SIGN[data[b].sign])}</span>${esc(w.signs[data[b].sign])} <span class="num">${deg(data[b].deg)}</span>`;
+    // Saturn first, in its own card: every return in a lifetime, with the age
+    const sat = data.Saturn.list.map((r, i) => {
+      const nowIn = now >= r.start - 30 * 86400000 && now <= r.end + 30 * 86400000;
+      const state = nowIn ? w.happening : ago(r.start);
+      const passes = r.passes.length > 1 ? `<small>${esc(w.passesN.replace("{n}", r.passes.length))}: ${r.passes.map((x) => esc(dm(x))).join(" · ")}</small>` : "";
+      return `<li class="${nowIn ? "is-now" : r.start < now ? "is-past" : ""}"><span class="nth">${esc(w.nth[i] || "")}</span>
+        <span class="when">${passLine(r)}${passes}</span><span class="age">${esc(ageAt(t, r.start))}</span><span class="state">${esc(state)}</span></li>`;
+    }).join("");
+    const card = `<div class="merc ret-sat"><span class="merc-planet" aria-hidden="true"></span>
+      <h2 class="merc-title">${esc(w.satReturn)}</h2>
+      <p class="merc-dates">${esc(w.atBirth.replace("{b}", w.bodies.Saturn))}: ${pos("Saturn")}</p>
+      <ol class="sat-list">${sat}</ol></div>`;
+    // Every planet: where it was, the last return and the next one
+    const rows = Sky.BODIES.filter((b) => b !== "Saturn").map((b) => {
+      const list = data[b].list, before = list.filter((r) => r.start <= now).pop(), after = list.find((r) => r.start > now);
+      const years = Sky.PERIOD[b] / 365.25;
+      const cell = (r, label) => `<span class="rcell"><span class="rlabel">${esc(label)}</span>${r ? `${passLine(r)} <span class="muted">· ${esc(ageAt(t, r.start))}</span>` : `<span class="muted">${esc(w.noReturnYet)}</span>`}</span>`;
+      const body = years > 100
+        ? `<span class="rnever muted">${esc(w.neverR.replace("{n}", Math.round(years / 5) * 5))}</span>`
+        : `${cell(before, w.lastR)}${cell(after, w.nextR)}${after ? `<span class="rin">${esc(ago(after.start))}</span>` : ""}`;
+      return `<li><span class="who"><span class="glyph">${g(GLYPH[b])}</span>${esc(w.bodies[b])}</span><span class="where">${pos(b)}</span>${body}</li>`;
+    }).join("");
+    return `${card}<h2>${esc(w.everyPlanet)}</h2><ul class="rets">${rows}</ul>`;
+  }
+  function bornForm() {
+    const f = $("born"); if (!f || f.dataset.ready) return;
+    f.dataset.ready = "1";
+    const sel = $("born-tz");
+    sel.innerHTML = zones.map((z) => `<option value="${esc(z)}">${esc(zoneName(z))}</option>`).join("");
+    sel.value = born ? born.tz : home;
+    if (born) { const [d, tm] = born.d.split("T"); $("born-date").value = d; $("born-time").value = tm || "12:00"; $("forget").hidden = false; }
+    f.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!$("born-date").value) return;
+      born = { d: `${$("born-date").value}T${$("born-time").value || "12:00"}`, tz: sel.value };
+      try { localStorage.setItem("born", JSON.stringify(born)); } catch (_) {}
+      $("forget").hidden = false;
+      set("returns-out", returnsOut());
+      $("returns-out").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    $("forget").addEventListener("click", () => {
+      born = null; bornCache = null;
+      try { localStorage.removeItem("born"); } catch (_) {}
+      $("born-date").value = ""; $("born-time").value = "12:00"; $("forget").hidden = true;
+      const q = new URLSearchParams(location.search); q.delete("born"); q.delete("btz");
+      history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
+      set("returns-out", returnsOut());
+    });
+  }
+  const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+
   // ---- the shell: header, menu, the moment, footer (the same on every page) ----
-  const PAGES = [["sky", "/"], ["planets", "/planets/"], ["retrogrades", "/retrogrades/"], ["moon", "/moon/"], ["chart", "/chart/"], ["calendar", "/calendar/"]];
+  const PAGES = [["sky", "/"], ["planets", "/planets/"], ["retrogrades", "/retrogrades/"], ["moon", "/moon/"], ["chart", "/chart/"], ["returns", "/returns/"], ["calendar", "/calendar/"]];
   const page = document.body.dataset.page || "sky";
   const state = () => { const q = new URLSearchParams(); if (!live) q.set("d", localInput(when)); if (zone !== home) q.set("tz", zone); return q.toString(); };
   const link = (key) => { const q = state(); return PAGES.find((p) => p[0] === key)[1] + (q ? "?" + q : ""); };
@@ -241,7 +330,7 @@
   function shell() {
     $("top").innerHTML = `<div class="topbar">
         <a class="brand" href="/">Astro</a>
-        <button class="lang" id="lang" type="button"></button>
+        <span class="tools"><button class="mode" id="mode" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/><g class="i-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg></button><button class="lang" id="lang" type="button"></button></span>
       </div>
       <nav class="nav" id="nav"><ul>${PAGES.map(([k]) => `<li><a data-page="${k}"${k === page ? ' aria-current="page"' : ""}></a></li>`).join("")}</ul></nav>`;
     $("moment").innerHTML = `<p class="moment-line"><span id="moment-text"></span><button type="button" class="change" id="change" aria-expanded="false" aria-controls="controls"></button></p>
@@ -262,7 +351,6 @@
 
   function renderPage() {
     const sky = Sky.sky(when);
-    const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
     set("sky-rows", skyTable(sky));
     set("sky-notes", skyNotes(sky));
     set("planet-cards", planetCards(sky));
@@ -275,6 +363,8 @@
     set("modalities", bars(sky.modalities, w.modality));
     set("aspect-list", aspectList(sky));
     set("calendar-list", calendarList(Sky.calendar(when, 90)));
+    bornForm();
+    set("returns-out", returnsOut());
   }
 
   function draw() {
@@ -295,7 +385,8 @@
     document.querySelectorAll("#nav a").forEach((a) => (a.textContent = w.nav[a.dataset.page]));
     document.querySelectorAll("[data-wn]").forEach((el) => (el.textContent = w.nav[el.dataset.wn]));
     $("nav").setAttribute("aria-label", w.navLabel);
-    const b = $("lang"); b.innerHTML = lang === "en" ? "<b>EN</b> / PT" : "EN / <b>PT</b>"; b.setAttribute("aria-label", `EN / PT: ${w.otherLabel}`);
+    const b = $("lang"); b.textContent = w.other; b.setAttribute("aria-label", `${w.other}: ${w.otherLabel}`);
+    paintTheme();
     $("prev").setAttribute("aria-label", w.prevDay); $("next").setAttribute("aria-label", w.nextDay);
     $("change").textContent = $("controls").hidden ? w.change : w.close;
     $("change").setAttribute("aria-label", $("controls").hidden ? w.changeLabel : w.close);
@@ -333,6 +424,21 @@
   $("now").addEventListener("click", () => setWhen(new Date(), true));
   $("prev").addEventListener("click", () => setWhen(new Date(when.getTime() - 86400000)));
   $("next").addEventListener("click", () => setWhen(new Date(when.getTime() + 86400000)));
+  // Dark or light: the device decides until a choice is made here, then the choice is kept
+  const isDark = () => (document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  function paintTheme() {
+    const m = $("mode"), dark = isDark();
+    m.setAttribute("aria-label", dark ? w.toLight : w.toDark); m.title = dark ? w.toLight : w.toDark;
+    m.classList.toggle("is-dark", dark);
+    document.querySelectorAll('meta[name="theme-color"]').forEach((t) => (t.content = dark ? "#0b0a09" : "#f4ede0"));
+  }
+  $("mode").addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (_) {}
+    paintTheme();
+  });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintTheme);
   $("lang").addEventListener("click", () => {
     lang = lang === "pt" ? "en" : "pt";
     try { localStorage.setItem("lang", lang); } catch (_) {}

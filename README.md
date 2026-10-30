@@ -13,6 +13,7 @@ to read for people who don't know astrology: the landing page is almost only a t
 | `/retrogrades/` | Mercury retrograde first (period, signs, days left), then every planet's current or next retrograde. |
 | `/moon/` | Phase, how lit, the next four phases, the Moon's sign and when it changes. |
 | `/chart/` | The zodiac wheel with aspect lines, the element and modality balance, the aspects. |
+| `/returns/` | Planet returns: from a birth date, time and place (kept on the device), when each planet comes back to its birth position. Saturn first (every return with the age, each pass when it goes back and forth), then the last and next return of every planet. |
 | `/calendar/` | The next 90 days: sign changes, stations, new and full moons, month by month. |
 
 The date, time and place sit in one quiet line on every page; **Change** opens the
@@ -28,7 +29,7 @@ No server, so hosting is free (GitHub Pages). Where it is going: [ROADMAP.md](RO
 
 | File | What it is |
 | --- | --- |
-| `sky.js` | The sums: positions, retrograde, sign entry/exit, retrograde periods, aspects, Moon, calendar. No page code. |
+| `sky.js` | The sums: positions, retrograde, sign entry/exit, retrograde periods, aspects, Moon, calendar, planet returns. No page code. |
 | `app.js` | The shell (header, menu, the moment line, footer) and one small renderer per page section. A page only renders the sections it has. |
 | `words.js` | Every word in both languages (the tests check both have the same keys). |
 | `astro.css` | The look: ink and gold (direction C of the ChatGPT designs), dark and light follow the device. |
@@ -47,3 +48,5 @@ in `words.js`.
 - Bump the `?v=` stamps on every CSS/JS change.
 
 `npm test` runs the Playwright tests (desktop + phone), including checks against known dates.
+
+**Capitals:** labels, headings and buttons are Title Case in both languages, so they match ("The Sky" / "O Céu"); a test checks it.

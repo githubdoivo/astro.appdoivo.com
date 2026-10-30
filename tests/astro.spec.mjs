@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 // A fixed moment, so the checks below do not drift: 29 Oct 2026, 12:00 in Lisbon
 const Q = "?lang=en&d=2026-10-29T12:00&tz=Europe/Lisbon";
-const PAGES = ["/", "/planets/", "/retrogrades/", "/moon/", "/chart/", "/calendar/"];
+const PAGES = ["/", "/planets/", "/retrogrades/", "/moon/", "/chart/", "/returns/", "/calendar/"];
 
 test.beforeEach(async ({ page }) => {
   // Start each test with nothing saved, but keep what the test itself saves across pages
@@ -132,7 +132,7 @@ test("Portuguese: from the browser, European Portuguese names, remembered across
   const page = await ctx.newPage();
   await page.goto("/?d=2026-10-29T12:00");
   await expect(page.locator("html")).toHaveAttribute("lang", "pt");
-  await expect(page.locator("h1")).toHaveText("O céu");
+  await expect(page.locator("h1")).toHaveText("O Céu");
   await expect(page.locator("#sky-rows")).toContainText("Balança");
   await expect(page.locator("#sky-rows")).toContainText("Carneiro");
   await expect(page.locator("#sky-notes")).toContainText("Mercúrio está retrógrado");
@@ -147,11 +147,17 @@ test("English labels use Title Case, and both languages have the same words", as
   await page.goto("/" + Q);
   const e = await page.evaluate(() => WORDS.en);
   const small = new Set(["a", "an", "and", "the", "of", "in", "on", "at", "to", "for", "by"]);
-  const labels = [e.skyTitle, e.now, e.prevDay, e.nextDay, e.zone, e.skyOn, e.change, e.close, e.planet, e.sign, e.since, e.untilCol, e.stay,
+  const labels = [e.bornDate, e.bornTime, e.bornZone, e.findReturns, e.satReturn, e.everyPlanet, e.toDark, e.toLight, e.skyTitle, e.now, e.prevDay, e.nextDay, e.zone, e.skyOn, e.change, e.close, e.planet, e.sign, e.since, e.untilCol, e.stay,
     e.wheel, e.balance, e.elements, e.modalities, e.aspects, e.nextPhases, e.retroNow, e.retroNext, e.aboutRetro, ...Object.values(e.nav)];
   for (const label of labels) label.split(/\s+/).forEach((w, i) => { if (i === 0 || !small.has(w.toLowerCase())) expect(w[0], `"${label}"`).toBe(w[0].toUpperCase()); });
   const pt = await page.evaluate(() => WORDS.pt);
   expect(Object.keys(pt).sort()).toEqual(Object.keys(e).sort());
+  // Golden rule: Portuguese labels are Title Case too, so both languages match ("The Sky" / "O Céu")
+  const smallPt = new Set(["o", "a", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas", "ao", "aos", "à", "um", "uma", "por", "para", "com"]);
+  const ptLabels = [pt.skyTitle, pt.now, pt.prevDay, pt.nextDay, pt.zone, pt.skyOn, pt.change, pt.close, pt.planet, pt.sign, pt.since, pt.untilCol, pt.stay,
+    pt.wheel, pt.balance, pt.elements, pt.modalities, pt.aspects, pt.nextPhases, pt.retroNow, pt.retroNext, pt.aboutRetro, pt.bornDate, pt.bornTime, pt.bornZone,
+    pt.findReturns, pt.satReturn, pt.everyPlanet, pt.toDark, pt.toLight, ...Object.values(pt.nav), ...pt.quarters];
+  for (const label of ptLabels) label.split(/\s+/).forEach((w, i) => { if (i === 0 || !smallPt.has(w.toLowerCase())) expect(w[0], `"${label}"`).toBe(w[0].toUpperCase()); });
   expect(Object.keys(pt.nav).sort()).toEqual(Object.keys(e.nav).sort());
 });
 
@@ -196,4 +202,24 @@ test("a lost link shows a calm 404 with a way back", async ({ page }) => {
   await page.goto("/404.html");
   await expect(page.locator("h1")).toHaveText("Lost in Space");
   await expect(page.locator("a[href='/']")).toBeVisible();
+});
+
+test("returns: Saturn comes back at about 29 and 58, every planet has a row, and the birth can be forgotten", async ({ page }) => {
+  await page.goto("/returns/" + Q);
+  await expect(page.locator("#returns-out")).toContainText("Enter a birth date");
+  await page.locator("#born-date").fill("1990-01-01");
+  await page.locator("#born-time").fill("12:00");
+  await page.locator("#born-tz").selectOption("Europe/Lisbon");
+  await page.locator("#born button[type=submit]").click();
+  const sat = page.locator(".sat-list li");
+  await expect(sat).toHaveCount(3);                                         // ages 29, 58, 88
+  await expect(sat.nth(0)).toContainText("7 Feb 2019");                     // Saturn back on 15° Capricorn, three passes in 2019
+  await expect(sat.nth(0)).toContainText("age 29");
+  await expect(sat.nth(1)).toContainText("age 58");
+  await expect(page.locator(".rets li")).toHaveCount(9);
+  await expect(page.locator(".rets")).toContainText("no return in a lifetime");   // Neptune and Pluto
+  await page.reload();                                                      // kept on this device
+  await expect(sat).toHaveCount(3);
+  await page.locator("#forget").click();
+  await expect(page.locator("#returns-out")).toContainText("Enter a birth date");
 });
