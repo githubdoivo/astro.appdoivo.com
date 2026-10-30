@@ -1,6 +1,6 @@
 # astro.appdoivo.com
 
-[![CI](https://github.com/githubdoivo/astro/actions/workflows/ci.yml/badge.svg)](https://github.com/githubdoivo/astro/actions/workflows/ci.yml)
+[![CI](https://github.com/githubdoivo/astro.appdoivo.com/actions/workflows/ci.yml/badge.svg)](https://github.com/githubdoivo/astro.appdoivo.com/actions/workflows/ci.yml)
 
 **Astro**: where the planets are, now or at any date, time and time zone. Calm and easy
 to read for people who don't know astrology: the landing page is almost only a table
