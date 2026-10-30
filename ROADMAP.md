@@ -12,9 +12,18 @@ below is intention, not built yet.
 - Built to grow: one shared shell (header, menu, moment line) and a renderer per
   section, so new pages (Me, Friends, Daily) slot in without touching the others.
 
+## Asked for (2026-10-30), in this order
+1. **Readings per planet in each sign**: Sun in Virgo must not read like Mercury in
+   Virgo. 120 short readings (10 planets x 12 signs), EN and PT; drafts for Ivo to edit.
+2. **A real calendar**: a month grid you can move through, plus filters such as
+   "every Moon in Pisces this year", "every Mercury retrograde", "full moons".
+3. **Big three look-alikes**: from a birth date, time and place (the city search gives
+   latitude and longitude, so the Ascendant can be worked out), find famous people
+   with the same Sun, Moon and Rising. Needs a list of public figures with reliable
+   birth times (Rodden rating AA/A); the signs are calculated here, not copied.
+
 ## Next
-1. **Design pass**: a clean, calm "mind space" look in the spirit of Co–Star, darker
-   mood, light and dark modes (from ChatGPT mockups).
+1. ~~Design pass~~: done 2026-10-30, ink and gold, light and dark.
 2. **Installable web app (PWA)** with **notifications**: Mercury retrograde starts / ends,
    other stations, new and full moons, sign changes the user picks.
    Needs a small server for web push (scheduled sends); free tiers are enough to start.
