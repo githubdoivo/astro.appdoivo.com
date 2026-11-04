@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 // A fixed moment, so the checks below do not drift: 29 Oct 2026, 12:00 in Lisbon
 const Q = "?lang=en&d=2026-10-29T12:00&tz=Europe/Lisbon";
-const PAGES = ["/", "/planets/", "/retrogrades/", "/moon/", "/chart/", "/returns/", "/calendar/"];
+const PAGES = ["/", "/planets/", "/retrogrades/", "/moon/", "/chart/", "/returns/", "/places/", "/calendar/"];
 
 // The city search answers from Open-Meteo; tests get a fixed answer instead, so they never depend on the network
 const CITIES = {
@@ -253,4 +253,53 @@ test("returns: Saturn comes back at about 29 and 58, every planet has a row, and
   await expect(sat).toHaveCount(3);
   await page.locator("#forget").click();
   await expect(page.locator("#returns-out")).toContainText("Enter a birth date");
+});
+
+// Places (astrocartography): the lines are where the sums say, and the love list and map draw from them
+test("places: planet lines sit where the planet is overhead or on the horizon", async ({ page }) => {
+  await page.goto("/places/?lang=en");
+  const r = await page.evaluate(() => {
+    const d = new Date("1990-06-15T10:30:00Z"), P = Atlas.points(d);
+    let worst = 0;
+    for (const l of Atlas.lines(d)) {
+      const p = P.find((x) => x.body === l.body);
+      for (const run of l.runs) for (const [lon, lat] of run) if (Math.abs(lat) < 75) worst = Math.max(worst, Atlas.distances(p, lat, lon)[l.angle]);
+    }
+    return { worst, sunMC: P.find((x) => x.body === "Sun").lon };
+  });
+  expect(r.worst).toBeLessThan(0.01);
+  // 10:30 UTC in mid-June: local noon (the Sun overhead line) is about 22.5°E
+  expect(r.sunMC).toBeGreaterThan(21.5);
+  expect(r.sunMC).toBeLessThan(23.5);
+});
+
+test("places: a birth gives three love countries, a map with lines, and the filter works", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/places/?lang=en");
+  await expect(page.locator("h1")).toHaveText("Places");
+  await expect(page.locator("#places-out")).toContainText("Enter your birth date");
+  await page.fill("#born-date", "1990-06-15");
+  await page.fill("#born-time", "11:30");
+  await page.fill("#born-place", "braga");
+  await page.locator("#born-place-list [role=option]").first().click();
+  await page.click("#born .go");
+  await expect(page.locator(".pl-top > li")).toHaveCount(3);
+  await expect(page.locator(".pl-top .pl-name").first()).not.toBeEmpty();
+  await expect(page.locator(".pl-line").first()).toContainText("Line");
+  await expect(page.locator("#map path.ln")).toHaveCount(40);
+  await expect(page.locator("#map .spot")).toHaveCount(3);
+  await expect(page.locator("#map .birth")).toHaveCount(1);
+  await expect(page.locator("#map")).toHaveClass(/only-love/);
+  await page.getByRole("button", { name: "All Lines" }).click();
+  await expect(page.locator("#map")).not.toHaveClass(/only-love/);
+  // Saved on this device: Returns knows the birth too, and Portuguese names the countries in Portuguese
+  await page.goto("/places/?lang=pt");
+  await expect(page.locator(".pl-top > li")).toHaveCount(3);
+  await expect(page.locator(".pl-line").first()).toContainText("Linha");
+  // Rough time: counted wider, and said so
+  await page.check("#born-approx");
+  await page.click("#born .go");
+  await expect(page.locator("#places-out .note")).toBeVisible();
+  expect(errors).toEqual([]);
 });

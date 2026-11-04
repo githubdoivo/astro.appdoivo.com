@@ -22,6 +22,17 @@ below is intention, not built yet.
    with the same Sun, Moon and Rising. Needs a list of public figures with reliable
    birth times (Rodden rating AA/A); the signs are calculated here, not copied.
 
+## Astrocartography (asked for 2026-11-03)
+- **Free, built**: `/places/`, the map with every planet line and the top 3 countries for love.
+- **Paid, next**: the full astrocartography report, not only love: every country ranked for
+  love, work and reputation, home and family, growth and luck, creativity, wellbeing and
+  the harder lines; the cities near the strongest lines; a written reading of each of the
+  40 lines (drafts for Ivo to edit); a PDF to keep. One-off price, about EUR 4-6.
+- The report must come from a server (a Worker, like Job's), since the repo is public and
+  anything locked in the page can be unlocked. Payments: Stripe, built once for Job and Astro.
+- Wording: for reflection, never a promise ("your Venus is strong here", not "you will meet
+  your soulmate here").
+
 ## Next
 1. ~~Design pass~~: done 2026-10-30, ink and gold, light and dark.
 2. **Installable web app (PWA)** with **notifications**: Mercury retrograde starts / ends,

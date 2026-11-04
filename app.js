@@ -310,26 +310,119 @@
     $("born-place").value = pick.name; note();
     placePicker($("born-place"), $("born-place-list"), (r) => { pick = { tz: r.tz, name: r.label, lat: r.lat, lon: r.lon }; note(); });
     if (born) { const [d, tm] = born.d.split("T"); $("born-date").value = d; $("born-time").value = tm || "12:00"; $("forget").hidden = false; }
+    if ($("born-approx")) $("born-approx").checked = !!(born && born.approx);
     f.addEventListener("submit", (e) => {
       e.preventDefault();
       if (!$("born-date").value) return;
-      born = { d: `${$("born-date").value}T${$("born-time").value || "12:00"}`, tz: pick.tz, place: pick.name, lat: pick.lat, lon: pick.lon };
+      const approx = $("born-approx") ? $("born-approx").checked : !!(born && born.approx);
+      born = { d: `${$("born-date").value}T${$("born-time").value || "12:00"}`, tz: pick.tz, place: pick.name, lat: pick.lat, lon: pick.lon, approx };
       try { localStorage.setItem("born", JSON.stringify(born)); } catch (_) {}
       $("forget").hidden = false;
-      set("returns-out", returnsOut());
-      $("returns-out").scrollIntoView({ behavior: "smooth", block: "start" });
+      bornOut();
+      ($("returns-out") || $("places-out")).scrollIntoView({ behavior: "smooth", block: "start" });
     });
     $("forget").addEventListener("click", () => {
       born = null; bornCache = null;
       try { localStorage.removeItem("born"); } catch (_) {}
       $("born-date").value = ""; $("born-time").value = "12:00"; $("forget").hidden = true;
       pick = { tz: home, name: "" }; $("born-place").value = ""; note();
+      if ($("born-approx")) $("born-approx").checked = false;
       const q = new URLSearchParams(location.search); q.delete("born"); q.delete("btz");
       history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
-      set("returns-out", returnsOut());
+      bornOut();
     });
   }
   const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+  // ---- places: astrocartography (atlas.js counts, this draws) ----
+  let world = null, worldAsked = false, placesKey = "", mapAll = false;
+  function loadWorld() {
+    if (worldAsked) return; worldAsked = true;
+    fetch("/places/world.json?v=1").then((r) => r.json()).then((j) => { world = j; placesKey = ""; bornOut(); })
+      .catch(() => { worldAsked = false; });
+  }
+  const regionName = (c) => { try { return new Intl.DisplayNames([lang === "pt" ? "pt-PT" : "en-GB"], { type: "region" }).of(c) || c; } catch (_) { return c; } };
+  const lineName = (b, a) => w.lineName.replace("{b}", w.lineOf[b]).replace("{a}", w.angles[a]);
+  const away = (km) => (km < 50 ? w.onIt : w.kmAway.replace("{n}", km.toLocaleString(loc())));
+  const xy = ([lon, lat]) => `${(lon + 180).toFixed(1)} ${(90 - lat).toFixed(1)}`;
+  const TOP = 78, BOTTOM = -58;                         // the map shows latitudes 78°N to 58°S
+  function worldMap(t, top) {
+    const tops = new Set(top.map((c) => c.code)), LOVE = Atlas.THEMES.love;
+    let s = `<svg viewBox="0 ${90 - TOP} 360 ${TOP - BOTTOM}" role="img" aria-label="${esc(w.mapLabel)}" preserveAspectRatio="xMidYMid meet">`;
+    s += `<rect x="0" y="${90 - TOP}" width="360" height="${TOP - BOTTOM}" class="sea"/>`;
+    for (const [c, d] of Object.entries(world.shapes)) s += `<path d="${d}" class="land${tops.has(c) ? " is-top" : ""}"><title>${esc(regionName(c))}</title></path>`;
+    s += `<line x1="0" y1="90" x2="360" y2="90" class="equator"/>`;
+    const placed = []; let labels = "";
+    // Love lines first, so they get the clearest label spots and are drawn on top
+    const weight = (l) => (LOVE[l.body] || {})[l.angle] || 0;
+    const all = Atlas.lines(new Date(t), TOP).sort((x, y) => Math.abs(weight(y)) - Math.abs(weight(x)));
+    for (const l of [...all].reverse()) {
+      const wt = weight(l), cls = `ln ln-${l.angle}${wt > 0 ? " is-love" : wt < 0 ? " is-hard" : ""}`;
+      s += `<path d="${l.runs.map((r) => "M" + r.map(xy).join("L")).join("")}" class="${cls}"><title>${esc(lineName(l.body, l.angle))}</title></path>`;
+    }
+    for (const l of all) {
+      const wt = weight(l), cls = `ln ln-${l.angle}${wt > 0 ? " is-love" : wt < 0 ? " is-hard" : ""}`;
+      // A label where the line is easy to find: the top or bottom edge for straight lines, a free spot on curves
+      const pts = l.runs.flat().filter(([, lat]) => lat < TOP - 5 && lat > BOTTOM + 5);
+      const tries = l.angle === "MC" ? [TOP - 4, TOP - 11, TOP - 18] : l.angle === "IC" ? [BOTTOM + 4, BOTTOM + 11, BOTTOM + 18] : [45, 35, 55, 25, 62, 15, 5, -5, -15, -25];
+      let at = null;
+      for (const lat of tries) {
+        const p = l.angle === "MC" || l.angle === "IC" ? [l.runs[0][0][0], lat] : pts.sort((a, b) => Math.abs(a[1] - lat) - Math.abs(b[1] - lat))[0];
+        if (p && Math.abs(p[1] - lat) < 3 && placed.every((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) > 7)) { at = p; break; }
+      }
+      if (at) { placed.push(at); labels += `<text x="${(at[0] + 180).toFixed(1)}" y="${(90 - at[1]).toFixed(1)}" class="${cls} lbl"><title>${esc(lineName(l.body, l.angle))}</title>${g(GLYPH[l.body])}</text>`; }
+    }
+    s += labels;
+    // The best spot in each of the top countries, numbered as in the list
+    top.forEach((c, i) => { s += `<g class="spot"><circle cx="${(c.lon + 180).toFixed(1)}" cy="${(90 - c.lat).toFixed(1)}" r="3.4"/><text x="${(c.lon + 180).toFixed(1)}" y="${(90 - c.lat).toFixed(1)}">${i + 1}</text></g>`; });
+    if (born.lat != null && born.lon != null) s += `<text x="${(born.lon + 180).toFixed(1)}" y="${(90 - born.lat).toFixed(1)}" class="birth">★</text>`;
+    return s + "</svg>";
+  }
+  function placesOut() {
+    if (!born) return `<p class="muted ret-empty">${esc(w.plEmpty)}</p>`;
+    if (!world || !window.Atlas) { loadWorld(); return `<p class="muted ret-empty">…</p>`; }
+    const t = inZone(born.tz, () => fromWall(born.d).getTime());
+    const ranked = Atlas.rank(new Date(t), world, "love", born.approx ? 14.5 : 7);
+    const top = ranked.filter((c) => c.score > 0).slice(0, 3);
+    const item = (c, i) => {
+      const good = c.near.filter((n) => n.weight > 0).slice(0, 3), hard = c.near.filter((n) => n.weight < 0);
+      const row = (n) => `<li><span class="pl-line"><span class="glyph">${g(GLYPH[n.body])}</span>${esc(lineName(n.body, n.angle))}</span>
+        <span class="pl-km num">${esc(away(n.km))}</span><span class="pl-why">${esc(w.loveWhy[n.body])} · ${esc(w.angleMeans[n.angle])}</span></li>`;
+      return `<li class="pl-country"><p class="pl-head"><span class="pl-n num">${i + 1}</span><span class="pl-name">${esc(regionName(c.code))}</span>
+          ${c.part ? `<span class="pl-part">${esc(w.strongest.replace("{p}", w.part[c.part]))}</span>` : ""}</p>
+        <ul class="pl-lines">${good.map(row).join("")}</ul>
+        ${hard.length ? `<p class="pl-worth">${esc(w.worth)}</p><ul class="pl-lines is-hard">${hard.map(row).join("")}</ul>` : ""}</li>`;
+    };
+    return `${born.approx ? `<p class="note">${esc(w.approxNote)}</p>` : ""}
+      <section class="pl-love"><h2>${esc(w.loveTitle)}</h2><p class="intro">${esc(w.loveIntro)}</p>
+        ${top.length ? `<ol class="pl-top">${top.map(item).join("")}</ol>` : `<p class="muted">${esc(w.noLove)}</p>`}</section>
+      <section class="pl-map"><h2>${esc(w.mapTitle)}</h2>
+        <p class="pl-filter" role="group"><button type="button" data-all="0" aria-pressed="${!mapAll}">${esc(w.showLove)}</button><button type="button" data-all="1" aria-pressed="${mapAll}">${esc(w.showAll)}</button></p>
+        <div class="map-scroll" id="map-scroll"><div class="map${mapAll ? "" : " only-love"}" id="map">${worldMap(t, top)}</div></div>
+        <p class="hint">${esc(w.mapKey)}</p></section>
+      <section class="merc pl-report"><span class="merc-planet" aria-hidden="true"></span>
+        <h2 class="merc-title">${esc(w.reportTitle)} <span class="soon-tag">${esc(w.reportSoon)}</span></h2>
+        <p class="meta">${esc(w.reportText)}</p></section>`;
+  }
+  function renderPlaces() {
+    const out = $("places-out"); if (!out) return;
+    const key = JSON.stringify([born, lang, !!world]);
+    if (key === placesKey) return;                        // the minute tick redraws the page; the map stays as it is
+    placesKey = key;
+    out.innerHTML = placesOut();
+    // On a phone the map scrolls sideways: start at the best place for love, else the birthplace
+    const sc = $("map-scroll"), svg = sc && sc.querySelector("svg");
+    if (sc && svg && sc.scrollWidth > sc.clientWidth) {
+      const t = inZone(born.tz, () => fromWall(born.d).getTime());
+      const best = Atlas.rank(new Date(t), world, "love", born.approx ? 14.5 : 7)[0];
+      const lon = best ? best.lon : born.lon != null ? born.lon : 0;
+      sc.scrollLeft = ((lon + 180) / 360) * svg.clientWidth - sc.clientWidth / 2;
+    }
+  }
+  function bornOut() {
+    if ($("returns-out")) set("returns-out", returnsOut());
+    if ($("places-out")) { placesKey = ""; renderPlaces(); }
+  }
+
 
   // ---- place search: any city in the world, with its time zone (Open-Meteo geocoding, free, no key) ----
   function placePicker(input, list, onPick) {
@@ -372,7 +465,7 @@
   }
 
   // ---- the shell: header, menu, the moment, footer (the same on every page) ----
-  const PAGES = [["sky", "/"], ["planets", "/planets/"], ["retrogrades", "/retrogrades/"], ["moon", "/moon/"], ["chart", "/chart/"], ["returns", "/returns/"], ["calendar", "/calendar/"]];
+  const PAGES = [["sky", "/"], ["planets", "/planets/"], ["retrogrades", "/retrogrades/"], ["moon", "/moon/"], ["chart", "/chart/"], ["returns", "/returns/"], ["places", "/places/"], ["calendar", "/calendar/"]];
   const page = document.body.dataset.page || "sky";
   const state = () => { const q = new URLSearchParams(); if (!live) q.set("d", localInput(when)); if (zone !== home) q.set("tz", zone); if (place) q.set("place", place); return q.toString(); };
   const link = (key) => { const q = state(); return PAGES.find((p) => p[0] === key)[1] + (q ? "?" + q : ""); };
@@ -416,7 +509,8 @@
     set("aspect-list", aspectList(sky));
     set("calendar-list", calendarList(Sky.calendar(when, 90)));
     bornForm();
-    set("returns-out", returnsOut());
+    if ($("returns-out")) set("returns-out", returnsOut());
+    renderPlaces();
   }
 
   function draw() {
@@ -461,6 +555,12 @@
   }
 
   shell();
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest(".pl-filter button"); if (!b) return;
+    mapAll = b.dataset.all === "1";
+    $("map").classList.toggle("only-love", !mapAll);
+    document.querySelectorAll(".pl-filter button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  });
   // On phones the menu scrolls sideways: bring the current page into view
   const here = document.querySelector("#nav a[aria-current=page]");
   if (here) $("nav").scrollLeft = Math.max(0, here.offsetLeft - 20);

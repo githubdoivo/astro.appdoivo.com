@@ -350,3 +350,45 @@ section { margin-top: 52px; }
 .combo-list [role=option]:hover, .combo-list [aria-selected=true] { background: var(--line); }
 .combo-note { padding: 10px 12px; color: var(--muted); font-size: 16px; }
 .tz-note { font-size: 14px; color: var(--faint); }
+
+/* ---- Places: astrocartography ---- */
+.check { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 16px; cursor: pointer; }
+.check input { width: 20px; height: 20px; accent-color: var(--gold); margin: 0; }
+.pl-love, .pl-map { margin-bottom: 40px; }
+.pl-top { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 14px; }
+.pl-country { background: var(--card); border: 1px solid var(--edge); border-radius: 14px; padding: 18px 20px; }
+.pl-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 8px; }
+.pl-n { font-family: var(--serif); font-size: 22px; color: var(--gold); min-width: 1ch; }
+.pl-name { font-family: var(--serif); font-size: clamp(26px, 4vw, 32px); font-weight: 500; line-height: 1.1; }
+.pl-part { color: var(--faint); font-size: 16px; }
+.pl-lines { list-style: none; margin: 0; padding: 0; }
+.pl-lines li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 14px; padding: 8px 0; border-top: 1px solid var(--line); }
+.pl-line { font-weight: 500; }
+.pl-line .glyph { color: var(--gold); margin-right: 6px; }
+.pl-km { color: var(--gold); white-space: nowrap; }
+.pl-why { grid-column: 1 / -1; color: var(--muted); font-size: 16px; }
+.pl-worth { margin: 12px 0 2px; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.pl-lines.is-hard .pl-line .glyph, .pl-lines.is-hard .pl-km { color: var(--tense); }
+.pl-filter { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+.pl-filter button { min-height: 40px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 999px; background: transparent; cursor: pointer; font-size: 16px; }
+.pl-filter button[aria-pressed="true"] { border-color: var(--gold); background: var(--gold); color: var(--bg); }
+.map-scroll { overflow-x: auto; border: 1px solid var(--edge); border-radius: 14px; background: var(--card); -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.map svg { display: block; width: 100%; min-width: 720px; height: auto; }
+.map .sea { fill: transparent; }
+.map .land { fill: var(--line); stroke: var(--bg); stroke-width: .25; }
+.map .land.is-top { fill: color-mix(in srgb, var(--gold) 28%, var(--line)); }
+.map .equator { stroke: var(--edge); stroke-width: .25; stroke-dasharray: 1 1.5; }
+.map .ln { fill: none; stroke: var(--faint); stroke-width: .45; opacity: .7; }
+.map .ln.is-love { stroke: var(--gold); stroke-width: .7; opacity: 1; }
+.map .ln.is-hard { stroke: var(--tense); stroke-width: .55; stroke-dasharray: 2 1.2; opacity: .85; }
+.map .ln.ln-AS, .map .ln.ln-DS { stroke-linecap: round; }
+.map text.lbl { font: 400 6px var(--sym); fill: var(--faint); stroke: var(--bg); stroke-width: 1.6; stroke-linejoin: round; paint-order: stroke; text-anchor: middle; dominant-baseline: central; opacity: 1; cursor: default; }
+.map text.lbl.is-love { fill: var(--gold); }
+.map text.lbl.is-hard { fill: var(--tense); }
+.map.only-love .ln:not(.is-love):not(.is-hard) { display: none; }
+.map .spot circle { fill: var(--gold); stroke: var(--bg); stroke-width: .6; }
+.map .spot text { font: 600 4px var(--text); fill: var(--bg); text-anchor: middle; dominant-baseline: central; }
+.map .birth { font-size: 6px; fill: var(--fg); stroke: var(--bg); stroke-width: .8; paint-order: stroke; text-anchor: middle; dominant-baseline: middle; }
+.pl-map .hint { color: var(--faint); font-size: 15px; margin-top: 10px; }
+.pl-report .meta { max-width: 60ch; }
+.soon-tag { display: inline-block; vertical-align: middle; margin-left: 8px; padding: 2px 10px; border: 1px solid var(--gold); border-radius: 999px; font: 500 14px var(--text); letter-spacing: .04em; color: var(--gold); }
