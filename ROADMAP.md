@@ -17,7 +17,7 @@ below is intention, not built yet.
    Virgo. 120 short readings (10 planets x 12 signs), EN and PT; drafts for Ivo to edit.
 2. **A real calendar**: a month grid you can move through, plus filters such as
    "every Moon in Pisces this year", "every Mercury retrograde", "full moons".
-3. **Big three look-alikes**: from a birth date, time and place (the city search gives
+3. **Big three look-alikes** (built 2026-11-04, `/lookalikes/`; grow tools/timed.json): from a birth date, time and place (the city search gives
    latitude and longitude, so the Ascendant can be worked out), find famous people
    with the same Sun, Moon and Rising. Needs a list of public figures with reliable
    birth times (Rodden rating AA/A); the signs are calculated here, not copied.

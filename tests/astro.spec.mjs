@@ -3,13 +3,14 @@ import AxeBuilder from "@axe-core/playwright";
 
 // A fixed moment, so the checks below do not drift: 29 Oct 2026, 12:00 in Lisbon
 const Q = "?lang=en&d=2026-10-29T12:00&tz=Europe/Lisbon";
-const PAGES = ["/", "/planets/", "/retrogrades/", "/moon/", "/chart/", "/returns/", "/places/", "/calendar/"];
+const PAGES = ["/", "/planets/", "/retrogrades/", "/moon/", "/chart/", "/returns/", "/places/", "/lookalikes/", "/calendar/"];
 
 // The city search answers from Open-Meteo; tests get a fixed answer instead, so they never depend on the network
 const CITIES = {
   "são paulo": [{ name: "São Paulo", admin1: "São Paulo", country: "Brazil", timezone: "America/Sao_Paulo", latitude: -23.55, longitude: -46.63 }],
   braga: [{ name: "Braga", admin1: "Braga", country: "Portugal", timezone: "Europe/Lisbon", latitude: 41.55, longitude: -8.42 },
           { name: "Braga", admin1: "Rio Grande do Sul", country: "Brazil", timezone: "America/Sao_Paulo", latitude: -27.6, longitude: -53.7 }],
+  honolulu: [{ name: "Honolulu", admin1: "Hawaii", country: "United States", timezone: "Pacific/Honolulu", latitude: 21.31, longitude: -157.86 }],
   nowhere: [{ name: "Nowhere", country: "Nowhere", timezone: "Etc/GMT+3", latitude: 0, longitude: 0 }],
 };
 test.beforeEach(async ({ page }) => {
@@ -302,4 +303,38 @@ test("places: a birth gives three love countries, a map with lines, and the filt
   await page.click("#born .go");
   await expect(page.locator("#places-out .note")).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+// Look-alikes: the big three from a birth, then famous people who share them
+test("look-alikes: Obama's birth gives his big three and finds him", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/lookalikes/?lang=en");
+  await expect(page.locator("h1")).toHaveText("Look-Alikes");
+  await page.fill("#born-date", "1961-08-04");
+  await page.fill("#born-time", "19:24");
+  await page.fill("#born-place", "honolulu");
+  await page.locator("#born-place-list [role=option]").first().click();
+  await page.click("#born .go");
+  await expect(page.locator(".al-three .al-v")).toHaveText([/Leo/, /Gemini/, /Aquarius/]);
+  await expect(page.locator(".al-list.is-three")).toContainText("Barack Obama");
+  const n = await page.locator(".al-sec").last().locator(".al-list li").count();
+  expect(n).toBeGreaterThan(5);
+  await page.click("#al-more");
+  expect(await page.locator(".al-sec").last().locator(".al-list li").count()).toBeGreaterThan(n);
+  // A rough time can give two possible Rising signs; without a place there is no Rising, and it says why
+  await page.check("#born-approx");
+  await page.click("#born .go");
+  await expect(page.locator("#alike-out .note")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("look-alikes: the timed list was built with the same sums the page uses", async ({ page }) => {
+  await page.goto("/lookalikes/?lang=en");
+  const bad = await page.evaluate(async () => {
+    const T = await (await fetch("/people/timed.json?v=1")).json();
+    return { n: T.length, odd: T.filter((r) => [r[5], r[6], r[7]].some((x) => !(x >= 0 && x < 12))).map((r) => r[1]) };
+  });
+  expect(bad.n).toBeGreaterThan(40);
+  expect(bad.odd).toEqual([]);
 });

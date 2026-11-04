@@ -202,5 +202,14 @@
     return out.map((r) => ({ start: r.passes[0], end: r.passes[r.passes.length - 1], passes: r.passes }));
   }
 
-  root.Sky = { BODIES, ELEMENT, MODALITY, ASPECTS, PERIOD, sky, upcoming, calendar, retrograde, lon, speed, returns };
+  // The Ascendant (rising sign degree): the point of the zodiac on the eastern horizon at that
+  // instant and place. lat, lon in degrees (east positive). Ecliptic longitude 0-360.
+  function ascendant(date, lat, lon) {
+    const time = A.MakeTime(date), T = time.tt / 36525;
+    const e = (23.4392911 - 0.0130042 * T) * Math.PI / 180;               // obliquity of the ecliptic
+    const ramc = norm(A.SiderealTime(time) * 15 + lon) * Math.PI / 180, f = lat * Math.PI / 180;
+    return norm(Math.atan2(Math.cos(ramc), -(Math.sin(ramc) * Math.cos(e) + Math.tan(f) * Math.sin(e))) * 180 / Math.PI);
+  }
+
+  root.Sky = { ascendant, BODIES, ELEMENT, MODALITY, ASPECTS, PERIOD, sky, upcoming, calendar, retrograde, lon, speed, returns };
 })(typeof window !== "undefined" ? window : globalThis);

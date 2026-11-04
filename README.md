@@ -15,6 +15,7 @@ to read for people who don't know astrology: the landing page is almost only a t
 | `/chart/` | The zodiac wheel with aspect lines, the element and modality balance, the aspects. |
 | `/returns/` | Planet returns: from a birth date, time and place (kept on the device), when each planet comes back to its birth position. Saturn first (every return with the age, each pass when it goes back and forth), then the last and next return of every planet. |
 | `/places/` | Astrocartography: the 40 planet lines (rising, setting, overhead, underfoot) on a world map, and the three countries best for love, each with its lines and distances. "Love Lines" or "All Lines". A rough birth time (±30 min) counts the lines wider. |
+| `/lookalikes/` | Big three look-alikes: Sun, Moon and Rising from the saved birth, then famous people who share them. All three (and two of three) from a short list of people with a published birth time; Sun and Moon from about 10,000 well-known people on Wikidata. |
 | `/calendar/` | The next 90 days: sign changes, stations, new and full moons, month by month. |
 
 The date, time and place sit in one quiet line on every page; **Change** opens the
@@ -33,6 +34,7 @@ No server, so hosting is free (GitHub Pages). Where it is going: [ROADMAP.md](RO
 | `sky.js` | The sums: positions, retrograde, sign entry/exit, retrograde periods, aspects, Moon, calendar, planet returns. No page code. |
 | `atlas.js` | Astrocartography sums: each planet's point overhead, its four lines, the distance from any place to them, and countries ranked per theme. No page code. |
 | `places/world.json` | Country shapes (Natural Earth 1:110m) and spots inside each country (1:50m, 2° grid), built by `node tools/build-world.mjs`. |
+| `people/` | `sun-0…11.json` (Wikidata people by Sun sign, Moon from the birth day) and `timed.json` (Sun, Moon, Rising), built by `node tools/build-people.mjs` from Wikidata (via qlever.dev) and `tools/timed.json`. Timed people are kept only when the date matches Wikidata and the Rising matches the one usually quoted. Murderers, war criminals and dictators are left out. |
 | `app.js` | The shell (header, menu, the moment line, footer) and one small renderer per page section. A page only renders the sections it has. |
 | `words.js` | Every word in both languages (the tests check both have the same keys). |
 | `astro.css` | The look: ink and gold (direction C of the ChatGPT designs), dark and light follow the device. |

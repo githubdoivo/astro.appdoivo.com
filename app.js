@@ -319,7 +319,7 @@
       try { localStorage.setItem("born", JSON.stringify(born)); } catch (_) {}
       $("forget").hidden = false;
       bornOut();
-      ($("returns-out") || $("places-out")).scrollIntoView({ behavior: "smooth", block: "start" });
+      ($("returns-out") || $("places-out") || $("alike-out")).scrollIntoView({ behavior: "smooth", block: "start" });
     });
     $("forget").addEventListener("click", () => {
       born = null; bornCache = null;
@@ -418,9 +418,71 @@
       sc.scrollLeft = ((lon + 180) / 360) * svg.clientWidth - sc.clientWidth / 2;
     }
   }
+
+  // ---- look-alikes: famous people with the same Sun, Moon and Rising ----
+  const people = {}, peopleAsked = {};
+  let alikeKey = "", alikeShown = 12;
+  function loadPeople(name) {
+    if (peopleAsked[name]) return; peopleAsked[name] = true;
+    fetch(`/people/${name}.json?v=1`).then((r) => r.json()).then((j) => { people[name] = j; alikeKey = ""; bornOut(); })
+      .catch(() => { peopleAsked[name] = false; });
+  }
+  // The big three at birth; the Rising as one or two signs when the time is only rough (±30 min)
+  function bigThree() {
+    const t = inZone(born.tz, () => fromWall(born.d).getTime());
+    const sun = Math.floor(Sky.lon("Sun", new Date(t)) / 30), moon = Math.floor(Sky.lon("Moon", new Date(t)) / 30);
+    let rising = [];
+    if (born.lat != null && born.lon != null) {
+      const at = (dt) => Math.floor(Sky.ascendant(new Date(t + dt), born.lat, born.lon) / 30);
+      rising = born.approx ? [...new Set([at(-1800000), at(0), at(1800000)])] : [at(0)];
+    }
+    return { sun, moon, rising };
+  }
+  const wiki = (q) => `https://${lang}.wikipedia.org/wiki/Special:GoToLinkedPage/${lang}wiki/Q${q}`;
+  function person(r, extra) {
+    const name = (lang === "pt" && r[2]) || r[1], desc = (lang === "pt" && r[4]) || r[3];
+    return `<li><a href="${wiki(r[0])}" target="_blank" rel="noopener"><span class="al-name">${esc(name)}</span></a>
+      ${desc ? `<span class="al-desc">${esc(desc)}</span>` : ""}${extra ? `<span class="al-note">${esc(extra)}</span>` : ""}</li>`;
+  }
+  function alikeOut() {
+    if (!born) return `<p class="muted ret-empty">${esc(w.alEmpty)}</p>`;
+    const me = bigThree(), file = `sun-${me.sun}`;
+    if (!people.timed || !people[file]) { loadPeople("timed"); loadPeople(file); return `<p class="muted ret-empty">…</p>`; }
+    const sg = (i) => `<span class="glyph">${g(SIGN[i])}</span>${esc(w.signs[i])}`;
+    const three = `<ul class="al-three">
+      <li><span class="al-k">${g(GLYPH.Sun)} ${esc(w.sunL)}</span><span class="al-v">${sg(me.sun)}</span></li>
+      <li><span class="al-k">${g(GLYPH.Moon)} ${esc(w.moonL)}</span><span class="al-v">${sg(me.moon)}</span></li>
+      <li><span class="al-k">↑ ${esc(w.risingL)}</span><span class="al-v">${me.rising.length ? me.rising.map(sg).join(` <span class="muted">${esc(w.or)}</span> `) : `<span class="muted al-none">${esc(w.noRising)}</span>`}</span></li></ul>`;
+    // The timed list: all three, then any two that include the Rising
+    const T = people.timed, up = me.rising;
+    const all3 = T.filter((r) => r[5] === me.sun && r[6] === me.moon && up.includes(r[7]));
+    const two = T.filter((r) => !all3.includes(r) && ((r[5] === me.sun) + (r[6] === me.moon) + up.includes(r[7]) === 2) && up.includes(r[7]));
+    const twoNote = (r) => w.shares[r[5] === me.sun && r[6] === me.moon ? "sm" : r[5] === me.sun ? "sr" : "mr"];
+    // Sun and Moon from the big list (the timed people with the same Sun and Moon are already above)
+    const shown = new Set([...all3, ...two].map((r) => r[0]));
+    // A sure Moon first, then the people born on the day it changed sign; famous first within each
+    const sm = people[file].filter((r) => (r[5] === me.moon || r[6] === me.moon) && !shown.has(r[0]))
+      .sort((x, y) => (x[6] !== -1) - (y[6] !== -1) || x[8] - y[8] || y[7] - x[7]);
+    const smNote = (r) => [r[6] !== -1 && w.moonDay, r[8] && w.sunDay].filter(Boolean).join(" · ");
+    return `<section class="card al-me"><h2>${esc(w.bigThree)}</h2>${three}</section>
+      ${born.approx ? `<p class="note">${esc(w.approxNote)}</p>` : ""}
+      ${up.length ? `<section class="al-sec"><h2>${esc(w.sameThree)}</h2><p class="hint">${esc(w.timedNote.replace("{n}", T.length))}</p>
+        ${all3.length ? `<ul class="al-list is-three">${all3.map((r) => person(r)).join("")}</ul>` : `<p class="muted">${esc(w.noThree)}</p>`}
+        ${two.length ? `<h3>${esc(w.sameTwo)}</h3><ul class="al-list">${two.map((r) => person(r, twoNote(r))).join("")}</ul>` : ""}</section>` : ""}
+      <section class="al-sec"><h2>${esc(w.sameSunMoon)}</h2><p class="hint">${esc(w.sunMoonNote)}</p>
+        <ul class="al-list">${sm.slice(0, alikeShown).map((r) => person(r, smNote(r))).join("")}</ul>
+        ${sm.length > alikeShown ? `<button type="button" class="more-btn" id="al-more">${esc(w.showMore)} <span class="muted">(${sm.length - alikeShown})</span></button>` : ""}</section>`;
+  }
+  function renderAlike() {
+    const out = $("alike-out"); if (!out) return;
+    const key = JSON.stringify([born, lang, alikeShown, Object.keys(people)]);
+    if (key === alikeKey) return;
+    alikeKey = key; out.innerHTML = alikeOut();
+  }
   function bornOut() {
     if ($("returns-out")) set("returns-out", returnsOut());
     if ($("places-out")) { placesKey = ""; renderPlaces(); }
+    if ($("alike-out")) { alikeKey = ""; alikeShown = 12; renderAlike(); }
   }
 
 
@@ -465,7 +527,7 @@
   }
 
   // ---- the shell: header, menu, the moment, footer (the same on every page) ----
-  const PAGES = [["sky", "/"], ["planets", "/planets/"], ["retrogrades", "/retrogrades/"], ["moon", "/moon/"], ["chart", "/chart/"], ["returns", "/returns/"], ["places", "/places/"], ["calendar", "/calendar/"]];
+  const PAGES = [["sky", "/"], ["planets", "/planets/"], ["retrogrades", "/retrogrades/"], ["moon", "/moon/"], ["chart", "/chart/"], ["returns", "/returns/"], ["places", "/places/"], ["alike", "/lookalikes/"], ["calendar", "/calendar/"]];
   const page = document.body.dataset.page || "sky";
   const state = () => { const q = new URLSearchParams(); if (!live) q.set("d", localInput(when)); if (zone !== home) q.set("tz", zone); if (place) q.set("place", place); return q.toString(); };
   const link = (key) => { const q = state(); return PAGES.find((p) => p[0] === key)[1] + (q ? "?" + q : ""); };
@@ -511,6 +573,7 @@
     bornForm();
     if ($("returns-out")) set("returns-out", returnsOut());
     renderPlaces();
+    renderAlike();
   }
 
   function draw() {
@@ -556,6 +619,7 @@
 
   shell();
   document.addEventListener("click", (e) => {
+    if (e.target.closest("#al-more")) { alikeShown += 24; renderAlike(); return; }
     const b = e.target.closest(".pl-filter button"); if (!b) return;
     mapAll = b.dataset.all === "1";
     $("map").classList.toggle("only-love", !mapAll);
