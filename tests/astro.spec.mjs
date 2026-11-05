@@ -338,3 +338,20 @@ test("look-alikes: the timed list was built with the same sums the page uses", a
   expect(bad.n).toBeGreaterThan(40);
   expect(bad.odd).toEqual([]);
 });
+
+/* ---------- phone frame (same as ivolopes.com), on every page ---------- */
+for (const path of ["/", "/moon/", "/chart/", "/places/", "/calendar/", "/planets/", "/retrogrades/", "/returns/", "/lookalikes/"]) {
+  test(`${path}: background fills past every edge, nothing pinned, window held by the strip`, async ({ page }) => {
+    await page.goto(path);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(160);
+    const pinned = await page.evaluate(() => [...document.querySelectorAll("body *")].filter((el) => ["fixed", "sticky"].includes(getComputedStyle(el).position)).map((el) => el.id || el.className));
+    expect(pinned).toEqual([]);
+    const vp = page.viewportSize();
+    const bg = await page.locator(".bg").evaluate((el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, img: getComputedStyle(el).backgroundImage }; });
+    expect(bg.top).toBeLessThanOrEqual(-150);
+    expect(bg.bottom).toBeGreaterThanOrEqual(vp.height);
+    expect(bg.img).not.toBe("none");
+    const top = await page.locator(".top").evaluate((el) => el.getBoundingClientRect().top);
+    expect(top).toBeGreaterThanOrEqual(0);
+  });
+}

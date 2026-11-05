@@ -32,15 +32,27 @@
     color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; background: var(--bg); overflow-x: clip; }
-body {
-  margin: 0; background: var(--bg); color: var(--fg); font: 18px/1.5 var(--text);
-  font-variant-numeric: lining-nums;
+/* Phone frame, same as ivolopes.com: the window never scrolls; .page scrolls over a still
+   background (.bg) that reaches past every edge: a strip above the screen (--above) and below
+   Safari's bars (--below). frame.js keeps the window scrolled down by the strip, so the clock
+   sits on the background. Nothing is pinned to the top or bottom edge. */
+:root { --above: 160px; --below: 0px; }
+@media (pointer: coarse) { :root { --below: 120px; } }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); overscroll-behavior-y: none; }
+html, body { height: 100%; overflow: hidden; }
+body { margin: 0; color: var(--fg); font: 18px/1.5 var(--text); font-variant-numeric: lining-nums; }
+.bg, .page { position: absolute; top: 0; left: 0; right: 0; height: calc(100vh + var(--above) + var(--below)); height: calc(100lvh + var(--above) + var(--below)); }
+/* never one flat colour: a faint gold glow from the top and a cooler dusk at the bottom */
+.bg { z-index: 0; background-color: var(--bg);
+  background-image: radial-gradient(90% 55% at 50% 0%, color-mix(in srgb, var(--gold) 9%, transparent), transparent 70%), radial-gradient(90% 60% at 50% 100%, color-mix(in srgb, var(--water) 10%, transparent), transparent 70%); }
+.page { z-index: 1; padding-top: var(--above); overflow-x: hidden; overflow-y: auto; overscroll-behavior: none; }
+.shell {
   padding-inline: max(20px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-right));
-  min-height: 100svh; display: flex; flex-direction: column; position: relative; overflow-x: clip;
+  padding-bottom: calc(100lvh - 100svh + var(--below));
+  min-height: 100svh; display: flex; flex-direction: column; position: relative; overflow-x: clip; isolation: isolate;
 }
 /* The starfield behind the top of every page, fading out as the page goes on */
-body::before {
+.shell::before {
   content: ""; position: absolute; inset: 0 0 auto; height: min(760px, 95svh); z-index: -1; pointer-events: none;
   background: var(--orn); opacity: .8;
   -webkit-mask: url(/img/stars.webp) center top / max(100%, 1100px) auto no-repeat, linear-gradient(#000 45%, transparent);
@@ -160,7 +172,7 @@ section { margin-top: 52px; }
 }
 /* The smallest phones (iPhone SE): a little tighter, and no sign symbols */
 @media (max-width: 360px) {
-  body { padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
+  .shell { padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
   .almanac { font-size: 13.5px; }
   .almanac td .glyph { display: none; }
   .almanac .deg { margin-left: 0; font-size: 12px; }
