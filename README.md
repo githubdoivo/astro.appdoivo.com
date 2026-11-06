@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/githubdoivo/astro.appdoivo.com/actions/workflows/ci.yml/badge.svg)](https://github.com/githubdoivo/astro.appdoivo.com/actions/workflows/ci.yml)
 
-**Astro**: where the planets are, now or at any date, time and time zone. Calm and easy
+**astrodoivo**: where the planets are, now or at any date, time and time zone. Calm and easy
 to read for people who don't know astrology: the landing page is almost only a table
 (inspired by ponteiro.com.br/transitos.php); everything else lives on its own quiet page.
 
