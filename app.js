@@ -534,7 +534,7 @@
 
   function shell() {
     $("top").innerHTML = `<div class="topbar">
-        <a class="brand" href="/">Astro</a>
+        <a class="brand" href="/">astrodoivo</a>
         <span class="tools"><button class="mode" id="mode" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/><g class="i-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg></button><button class="lang" id="lang" type="button"></button></span>
       </div>
       <nav class="nav" id="nav"><ul>${PAGES.map(([k]) => `<li><a data-page="${k}"${k === page ? ' aria-current="page"' : ""}></a></li>`).join("")}</ul></nav>`;
